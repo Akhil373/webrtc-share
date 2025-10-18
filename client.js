@@ -264,7 +264,7 @@ function attachDcHandler(channel) {
             a.download = fileMetadata.fileName;
             a.textContent = `Download ${fileMetadata.fileName}`;
 
-            const panel = document.getElementById("size-panel");
+            const panel = document.getElementById("side-panel");
             if (panel) {
                 panel.appendChild(a);
             } else {
