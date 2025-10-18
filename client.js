@@ -175,15 +175,15 @@ ws.onmessage = async (event) => {
         return;
     }
 
-    if (message.type === "fileMeta") {
-        fileMetadata = {
-            fileName: message.fileName,
-            fileType: message.fileType,
-            fileSize: message.fileSize,
-        };
-        console.log("Metadata stored: " + fileMetadata);
-        return;
-    }
+    // if (message.type === "fileMeta") {
+    //     fileMetadata = {
+    //         fileName: message.fileName,
+    //         fileType: message.fileType,
+    //         fileSize: message.fileSize,
+    //     };
+    //     console.log("Metadata stored: " + fileMetadata);
+    //     return;
+    // }
     if (message.type == "clientsList") {
         peerList = message.content || [];
         updatePeersList(peerList);
@@ -242,9 +242,8 @@ pc.onicecandidate = (event) => {
 };
 
 function attachDcHandler(channel) {
-    let receivedChunks = [];
-    let expectedChunks = 0;
-    let currentFile = null;
+    let pendingBlob = null;
+    let receivedfileMetadata = null;
 
     channel.onopen = () => {
         updateDcStatus(true);
@@ -253,27 +252,40 @@ function attachDcHandler(channel) {
 
     channel.onmessage = (event) => {
         if (event.data && event.data.constructor.name === "Blob") {
-            if (!fileMetadata) {
-                console.warn("Got file blob without metadata");
+            const blob = event.data;
+
+            if (!receivedfileMetadata) {
+                console.warn("Got file blob before metadata, buffering...");
+                pendingBlob = blob;
                 return;
             }
-            const blob = event.data;
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement("a");
-            a.href = url;
-            a.download = fileMetadata.fileName;
-            a.textContent = `Download ${fileMetadata.fileName}`;
 
-            const panel = document.getElementById("side-panel");
-            if (panel) {
-                panel.appendChild(a);
-            } else {
-                document.body.appendChild(a);
-            }
-
-            fileMetadata = null;
+            processReceivedFile(blob);
             return;
         }
+
+        try {
+            const data = JSON.parse(event.data);
+
+            if (data.type === "fileMeta") {
+                receivedfileMetadata = {
+                    fileName: data.fileName,
+                    fileType: data.fileType,
+                    fileSize: data.fileSize,
+                };
+                console.log("Metadata received via data channel:", fileMetadata);
+
+                if (pendingBlob) {
+                    console.log("Processing buffered blob with metadata");
+                    processReceivedFile(pendingBlob);
+                    pendingBlob = null;
+                }
+                return;
+            }
+        } catch (e) {
+            console.error(e);
+        }
+
         logMessage("Peer: " + event.data);
     };
 
@@ -281,6 +293,30 @@ function attachDcHandler(channel) {
         updateDcStatus(false);
         console.log("Data channel error: " + err, "warning");
     };
+
+    function processReceivedFile(blob) {
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = receivedfileMetadata.fileName;
+        a.textContent = `Download ${receivedfileMetadata.fileName}`;
+        a.style.display = "block";
+        a.style.margin = "10px 0";
+
+        const panel = document.getElementById("side-panel");
+        if (panel) {
+            panel.appendChild(a);
+            logMessage(`File ready: ${receivedfileMetadata.fileName}`, "info");
+        } else {
+            document.body.appendChild(a);
+            logMessage(
+                `File ready: ${receivedfileMetadata.fileName} (added to body)`,
+                "warning",
+            );
+        }
+
+        receivedfileMetadata = null;
+    }
 }
 
 pc.ondatachannel = (event) => {
@@ -304,12 +340,13 @@ async function sendFiles() {
         fileType: file.type,
         fileSize: file.size,
     };
-    sendMessage({
+    const metadata = {
         type: "fileMeta",
         ...fileMetadata,
         from: myId,
         to: targetId,
-    });
+    };
+    dc.send(JSON.stringify(metadata));
 
     // while (offset <= file.size) {
     //     const end = Math.min(offset + chunkSize, file.size);
@@ -322,6 +359,7 @@ async function sendFiles() {
     dc.send(arrayBuf);
 
     logMessage(`Sent file: ${file.name}`);
+    fileMetadata = null;
 }
 
 async function makeCall() {
