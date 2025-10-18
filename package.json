@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "cd webrtc-signaling && node server.js"
   },
   "keywords": [],
   "type": "module",
@@ -12,6 +13,7 @@
   "license": "ISC",
   "packageManager": "pnpm@10.18.3",
   "dependencies": {
+    "dotenv": "^17.2.3",
     "live-server": "^1.2.2",
     "ws": "^8.18.3"
   }

@@ -1,4 +1,4 @@
-import { wss } from "./ws-server";
+import { wss } from "./ws-server.js";
 const broadcastClients = () => {
     const clientsList = [];
     wss.clients.forEach((client) => {
