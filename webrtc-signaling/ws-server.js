@@ -2,8 +2,9 @@ import "dotenv/config";
 import { WebSocketServer } from "ws";
 
 const port = process.env.PORT || 8080;
-export const wss = new WebSocketServer({ port: port });
+const host = "0.0.0.0";
 
-server.listen(port, "0.0.0.0", () => {
-    console.log(`Listening on port ${port}`);
+const wss = new WebSocketServer({ port, host });
+wss.on("listening", () => {
+    console.log(`WebSocket server listening on ${host}:${port}`);
 });
