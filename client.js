@@ -130,8 +130,21 @@ messageInput.addEventListener("keypress", (e) => {
 
 fileShareBtn.addEventListener("click", sendFiles);
 
-// Your existing JavaScript code with some modifications to integrate with the UI
-const config = { iceServers: [{ urls: "stun:stun.l.google.com:19302" }] };
+// const config = { iceServers: [{ urls: "stun:stun.l.google.com:19302" }] };
+const config = {
+    iceServers: [
+        { urls: "stun:stun.l.google.com:19302" },
+        {
+            urls: [
+                "turn:staticauth.openrelay.metered.ca:80?transport=udp",
+                "turn:staticauth.openrelay.metered.ca:443?transport=udp",
+                "turn:staticauth.openrelay.metered.ca:443?transport=tcp",
+            ],
+            username: "openrelayproject",
+            credential: "openrelayprojectsecret",
+        },
+    ],
+};
 const pc = new RTCPeerConnection(config);
 let dc;
 let myId = null;
@@ -227,10 +240,15 @@ pc.onicecandidate = (event) => {
 };
 
 function attachDcHandler(channel) {
+    let receivedChunks = [];
+    let expectedChunks = 0;
+    let currentFile = null;
+
     channel.onopen = () => {
         updateDcStatus(true);
         console.log("Data Channel is active");
     };
+
     channel.onmessage = (event) => {
         if (event.data && event.data.constructor.name === "Blob") {
             if (!fileMetadata) {
@@ -271,6 +289,10 @@ pc.ondatachannel = (event) => {
 
 async function sendFiles() {
     const file = fileInput.files[0];
+
+    const chunkSize = 16 * 1024;
+    let offset = 0;
+
     if (!file) {
         logMessage("Please select a file!");
     }
@@ -286,8 +308,17 @@ async function sendFiles() {
         from: myId,
         to: targetId,
     });
+
+    // while (offset <= file.size) {
+    //     const end = Math.min(offset + chunkSize, file.size);
+    //     const chunk = file.slice(offset, end);
+    //     const arrayBuf = await chunk.arrayBuffer();
+    //     dc.send(arrayBuf);
+    //     offset += arrayBuf.byteLength;
+    // }
     const arrayBuf = await file.arrayBuffer();
     dc.send(arrayBuf);
+
     logMessage(`Sent file: ${file.name}`);
 }
 
