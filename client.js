@@ -134,16 +134,24 @@ fileShareBtn.addEventListener("click", sendFiles);
 const config = {
     iceServers: [
         { urls: "stun:stun.l.google.com:19302" },
+        { urls: "stun:stun1.l.google.com:19302" },
         {
-            urls: [
-                "turn:staticauth.openrelay.metered.ca:80?transport=udp",
-                "turn:staticauth.openrelay.metered.ca:443?transport=udp",
-                "turn:staticauth.openrelay.metered.ca:443?transport=tcp",
-            ],
+            urls: "turn:openrelay.metered.ca:80",
             username: "openrelayproject",
-            credential: "openrelayprojectsecret",
+            credential: "openrelayproject",
+        },
+        {
+            urls: "turn:openrelay.metered.ca:443",
+            username: "openrelayproject",
+            credential: "openrelayproject",
+        },
+        {
+            urls: "turn:openrelay.metered.ca:443?transport=tcp",
+            username: "openrelayproject",
+            credential: "openrelayproject",
         },
     ],
+    iceCandidatePoolSize: 10,
 };
 const pc = new RTCPeerConnection(config);
 let dc;
@@ -151,6 +159,23 @@ let myId = null;
 let targetId = null;
 let peerList = [];
 let fileMetadata = null;
+
+pc.oniceconnectionstatechange = () => {
+    console.log(`ICE connection state: ${pc.iceConnectionState}`, "info");
+
+    if (
+        pc.iceConnectionState === "failed" ||
+        pc.iceConnectionState === "disconnected"
+    ) {
+        logMessage("Connection failed. Try refreshing and reconnecting.", "error");
+    } else if (pc.iceConnectionState === "connected") {
+        logMessage("Peer-to-peer connection established!", "info");
+    }
+};
+
+pc.onconnectionstatechange = () => {
+    console.log(`Connection state: ${pc.connectionState}`, "info");
+};
 
 const ws = new WebSocket("wss://webrtc-share.onrender.com");
 
@@ -175,15 +200,6 @@ ws.onmessage = async (event) => {
         return;
     }
 
-    // if (message.type === "fileMeta") {
-    //     fileMetadata = {
-    //         fileName: message.fileName,
-    //         fileType: message.fileType,
-    //         fileSize: message.fileSize,
-    //     };
-    //     console.log("Metadata stored: " + fileMetadata);
-    //     return;
-    // }
     if (message.type == "clientsList") {
         peerList = message.content || [];
         updatePeersList(peerList);
@@ -231,6 +247,11 @@ function sendMessage(message) {
 
 pc.onicecandidate = (event) => {
     if (event.candidate) {
+        if (event.candidate.candidate.includes(".local")) {
+            console.log("Skipping .local candidate", "info");
+            return;
+        }
+
         sendMessage({
             type: "ice-candidate",
             candidate: event.candidate,
