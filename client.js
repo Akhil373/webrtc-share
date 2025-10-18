@@ -181,6 +181,8 @@ ws.onmessage = async (event) => {
             fileType: message.fileType,
             fileSize: message.fileSize,
         };
+        console.log("Metadata stored: " + fileMetadata);
+        return;
     }
     if (message.type == "clientsList") {
         peerList = message.content || [];
