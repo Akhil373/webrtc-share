@@ -1,0 +1,87 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>WebRTC Peer Connection Tester</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <h1>WebRTC Peer Connection Tester</h1>
+        <p class="subtitle">
+          Test WebRTC data channel connections between peers
+        </p>
+      </header>
+      <div class="status-bar">
+        <div class="status-item">
+          <div class="status-label">WebSocket Status</div>
+          <div id="ws-status" class="status-value disconnected">
+            Disconnected
+          </div>
+        </div>
+        <div class="status-item">
+          <div class="status-label">Your ID</div>
+          <div id="my-id" class="status-value">Not registered</div>
+        </div>
+        <div class="status-item">
+          <div class="status-label">Data Channel</div>
+          <div id="dc-status" class="status-value disconnected">Closed</div>
+        </div>
+        <div class="status-item">
+          <div class="status-label">Selected Peer</div>
+          <div id="selected-peer" class="status-value">None</div>
+        </div>
+      </div>
+      <div class="main-content">
+        <div class="panel" id="side-panel">
+          <h2>Available Peers</h2>
+          <ul id="peers-list" class="peers-list">
+            <li class="peer-item empty">No peers available</li>
+          </ul>
+          <div class="action-buttons">
+            <button id="refresh-btn" class="btn btn-primary">
+              Refresh Peers
+            </button>
+            <button id="call-btn" class="btn btn-success" disabled>
+              Make Call
+            </button>
+          </div>
+          <label for="fileShare">Send files...</label>
+          <br />
+          <input
+            type="file"
+            name="fileShare"
+            id="fileShare"
+            class="file-input"
+          />
+          <button type="button" class="btn btn-primary" id="send-file-btn">
+            Send
+          </button>
+        </div>
+        <div class="panel">
+          <h2>Connection Log</h2>
+          <div id="message-log" class="message-log">
+            <div class="log-entry">
+              <span class="log-time">[00:00:00]</span>
+              <span class="log-info"
+                >Application started. Enter your name to begin.</span
+              >
+            </div>
+          </div>
+          <div class="message-input">
+            <input
+              type="text"
+              id="message-input"
+              placeholder="Type a message to send..."
+              disabled
+            />
+            <button id="send-btn" disabled>Send</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <script src="client.js" type="module"></script>
+  </body>
+</html>
