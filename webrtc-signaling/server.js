@@ -22,8 +22,6 @@ wss.on("connection", function connection(ws) {
     ws.send(JSON.stringify({ yourID: ws.id }));
     broadcastClients();
 
-    ws.on("error", console.error);
-
     ws.on("message", function message(data) {
         const msg = JSON.parse(data);
 
@@ -52,5 +50,9 @@ wss.on("connection", function connection(ws) {
                 });
                 break;
         }
+    });
+    ws.on("error", console.error);
+    ws.on("close", () => {
+        broadcastClients();
     });
 });
