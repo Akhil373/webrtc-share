@@ -3,10 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>WebRTC Peer Connection Tester</title>
-    <link rel="stylesheet" href="style.css" />
+    <title>WebRTC Peer2Peer Connection</title>
+    <link rel="stylesheet" href="output.css" />
   </head>
-  <body>
+  <body class="bg-black">
     <div class="container">
       <header>
         <h1>WebRTC Peer Connection Tester</h1>
@@ -25,6 +25,11 @@
           <div class="status-label">Your ID</div>
           <div id="my-id" class="status-value">Not registered</div>
         </div>
+        <div class="status-item">
+          <div class="status-label">Your Name</div>
+          <div id="my-name" class="status-value">Not registered</div>
+        </div>
+
         <div class="status-item">
           <div class="status-label">Data Channel</div>
           <div id="dc-status" class="status-value disconnected">Closed</div>
@@ -59,6 +64,7 @@
           <button type="button" class="btn btn-primary" id="send-file-btn">
             Send
           </button>
+          <div id="file-progress"></div>
         </div>
         <div class="panel">
           <h2>Connection Log</h2>

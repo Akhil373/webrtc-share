@@ -1,4 +1,3 @@
-// DOM Elements
 const wsStatusEl = document.getElementById("ws-status");
 const myIdEl = document.getElementById("my-id");
 const dcStatusEl = document.getElementById("dc-status");
@@ -11,6 +10,8 @@ const messageInput = document.getElementById("message-input");
 const sendBtn = document.getElementById("send-btn");
 const fileInput = document.getElementById("fileShare");
 const fileShareBtn = document.getElementById("send-file-btn");
+const nameEl = document.getElementById("my-name");
+const fileProg = document.getElementById("file-progress");
 
 function logMessage(message, type = "info") {
     const now = new Date();
@@ -28,10 +29,6 @@ function logMessage(message, type = "info") {
 
 function updatePeersList(peers) {
     peersListEl.innerHTML = "";
-    // console.log("update peer called!");
-    // peers.forEach((peer) => {
-    //     console.log(peer + " ");
-    // });
 
     if (peers.length === 0) {
         const emptyItem = document.createElement("li");
@@ -149,6 +146,38 @@ let targetId = null;
 let peerList = [];
 let fileMetadata = null;
 
+function getUserDetails() {
+    const userAgent = navigator.userAgent;
+    let OSName = "Unknown OS";
+    let browserName = "Unknown Browser";
+
+    if (userAgent.indexOf("Win") !== -1) OSName = "Windows";
+    else if (userAgent.indexOf("Mac") !== -1) OSName = "MacOS";
+    else if (userAgent.indexOf("X11") !== -1) OSName = "UNIX";
+    else if (userAgent.indexOf("Linux") !== -1) OSName = "Linux";
+    else if (userAgent.indexOf("Android") !== -1) OSName = "Android";
+    else if (userAgent.indexOf("iOS") !== -1) OSName = "iOS";
+
+    if (userAgent.indexOf("Chrome") !== -1 && userAgent.indexOf("Edge") === -1)
+        browserName = "Chrome";
+    else if (userAgent.indexOf("Firefox") !== -1) browserName = "Firefox";
+    else if (
+        userAgent.indexOf("Safari") !== -1 &&
+        userAgent.indexOf("Chrome") === -1
+    )
+        browserName = "Safari";
+    else if (userAgent.indexOf("Edge") !== -1) browserName = "Edge";
+    else if (
+        userAgent.indexOf("MSIE") !== -1 ||
+        userAgent.indexOf("Trident") !== -1
+    )
+        browserName = "Internet Explorer";
+    else if (userAgent.indexOf("Opera") !== -1 || userAgent.indexOf("OPR") !== -1)
+        browserName = "Opera";
+
+    return [OSName, browserName];
+}
+
 pc.oniceconnectionstatechange = () => {
     console.log(`ICE connection state: ${pc.iceConnectionState}`, "info");
 
@@ -172,7 +201,9 @@ ws.onopen = () => {
     updateWsStatus(true);
     console.log("WebSocket connected!", "info");
 
-    const myName = prompt("Enter your name", "Guest");
+    const [osName, browser] = getUserDetails();
+    const myName = `${browser}@${osName}`;
+    nameEl.textContent = myName;
     sendMessage({
         type: "register",
         name: myName,
@@ -252,8 +283,9 @@ pc.onicecandidate = (event) => {
 };
 
 function attachDcHandler(channel) {
-    let pendingBlob = null;
+    let pendingBlob = [];
     let receivedfileMetadata = null;
+    let receivedBytes = 0;
 
     channel.onopen = () => {
         updateDcStatus(true);
@@ -261,41 +293,46 @@ function attachDcHandler(channel) {
     };
 
     channel.onmessage = (event) => {
-        if (event.data && event.data.constructor.name === "Blob") {
-            const blob = event.data;
-
+        const data = event.data;
+        if (data instanceof Blob || data instanceof ArrayBuffer) {
             if (!receivedfileMetadata) {
                 console.warn("Got file blob before metadata, buffering...");
-                pendingBlob = blob;
+                pendingBlob.push(data);
                 return;
             }
 
-            processReceivedFile(blob);
+            pendingBlob.push(data);
+            receivedBytes += data.size || data.byteLength;
+            if (receivedBytes >= receivedfileMetadata.fileSize) {
+                processReceivedFile();
+            }
             return;
         }
 
         try {
-            const data = JSON.parse(event.data);
+            const msg = JSON.parse(data);
 
-            if (data.type === "fileMeta") {
+            if (msg.type === "fileMeta") {
                 receivedfileMetadata = {
-                    fileName: data.fileName,
-                    fileType: data.fileType,
-                    fileSize: data.fileSize,
+                    fileName: msg.fileName,
+                    fileType: msg.fileType,
+                    fileSize: msg.fileSize,
                 };
-                console.log("Metadata received via data channel:", fileMetadata);
+                console.log("Metadata received:", receivedfileMetadata);
 
-                if (pendingBlob) {
-                    console.log("Processing buffered blob with metadata");
-                    processReceivedFile(pendingBlob);
-                    pendingBlob = null;
+                if (pendingBlob.length > 0) {
+                    receivedBytes = pendingBlob.reduce(
+                        (total, chunk) => total + (chunk.size || chunk.byteLength),
+                        0,
+                    );
+                    if (receivedBytes >= receivedfileMetadata.fileSize) {
+                        processReceivedFile();
+                    }
                 }
-                return;
             }
         } catch (e) {
-            console.error(e);
+            logMessage("Peer: " + data);
         }
-
         logMessage("Peer: " + event.data);
     };
 
@@ -304,7 +341,10 @@ function attachDcHandler(channel) {
         console.log("Data channel error: " + err, "warning");
     };
 
-    function processReceivedFile(blob) {
+    function processReceivedFile() {
+        const blob = new Blob(pendingBlob, {
+            type: receivedfileMetadata.fileType,
+        });
         const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
@@ -326,6 +366,8 @@ function attachDcHandler(channel) {
         }
 
         receivedfileMetadata = null;
+        pendingBlob = [];
+        receivedBytes = 0;
     }
 }
 
@@ -338,8 +380,9 @@ pc.ondatachannel = (event) => {
 async function sendFiles() {
     const file = fileInput.files[0];
 
-    const chunkSize = 16 * 1024;
+    const chunkSize = 64 * 1024;
     let offset = 0;
+    const total_chunks = chunkSize / file.size;
 
     if (!file) {
         logMessage("Please select a file!");
@@ -358,15 +401,19 @@ async function sendFiles() {
     };
     dc.send(JSON.stringify(metadata));
 
-    // while (offset <= file.size) {
-    //     const end = Math.min(offset + chunkSize, file.size);
-    //     const chunk = file.slice(offset, end);
-    //     const arrayBuf = await chunk.arrayBuffer();
-    //     dc.send(arrayBuf);
-    //     offset += arrayBuf.byteLength;
-    // }
-    const arrayBuf = await file.arrayBuffer();
-    dc.send(arrayBuf);
+    let progress = 0;
+    while (offset < file.size) {
+        const end = Math.min(offset + chunkSize, file.size);
+        const chunk = file.slice(offset, end);
+        const arrayBuf = await chunk.arrayBuffer();
+        dc.send(arrayBuf);
+
+        offset = end;
+
+        const progress = (offset / file.size) * 100;
+        fileProg.textContent =
+            offset === file.size ? "File Sent!" : `Progress: ${progress.toFixed(1)}%`;
+    }
 
     logMessage(`Sent file: ${file.name}`);
     fileMetadata = null;
@@ -392,5 +439,4 @@ async function makeCall() {
     }
 }
 
-// Initialize UI
 console.log("WebRTC Peer Connection Tester initialized", "info");

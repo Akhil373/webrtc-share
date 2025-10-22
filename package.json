@@ -11,10 +11,12 @@
   "type": "module",
   "author": "",
   "license": "ISC",
-  "packageManager": "pnpm@10.18.3",
+  "packageManager": "pnpm@10.19.0",
   "dependencies": {
+    "@tailwindcss/cli": "^4.1.15",
     "dotenv": "^17.2.3",
     "live-server": "^1.2.2",
+    "tailwindcss": "^4.1.15",
     "ws": "^8.18.3"
   }
 }
