@@ -303,8 +303,20 @@ function attachDcHandler(channel) {
 
             pendingBlob.push(data);
             receivedBytes += data.size || data.byteLength;
+            if (fileProg) {
+                const percent = Math.min(
+                    100,
+                    (receivedBytes / receivedfileMetadata.fileSize) * 100,
+                );
+                fileProg.textContent = `Receiving: ${percent.toFixed(1)}%`;
+            }
             if (receivedBytes >= receivedfileMetadata.fileSize) {
-                processReceivedFile();
+                if (fileProg) {
+                    fileProg.textContent = "finalizing file...";
+                }
+                setTimeout(() => {
+                    processReceivedFile();
+                }, 0);
             }
             return;
         }
@@ -346,6 +358,9 @@ function attachDcHandler(channel) {
             type: receivedfileMetadata.fileType,
         });
         const url = URL.createObjectURL(blob);
+        if (fileProg) {
+            fileProg.textContent = "File received!";
+        }
         const a = document.createElement("a");
         a.href = url;
         a.download = receivedfileMetadata.fileName;
