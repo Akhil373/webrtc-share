@@ -468,7 +468,7 @@ async function sendFiles() {
     if (!file) fileProg.textContent = "Please pick a file!";
 
     const maxMsgSize = getRemoteMaxMessageSize();
-    console.log(`Maximum message size: ${maxMsgSize}`);
+    // console.log(`Maximum message size: ${maxMsgSize}`);
     const effectiveSize = 1 * 1024 * 1024 - 2 * 1024;
     let chunkSize = 64 * 1024;
     if (maxMsgSize && maxMsgSize >= effectiveSize)
@@ -525,7 +525,7 @@ async function makeCall() {
             from: myId,
             to: targetId,
         });
-        // console.log(`offer sdp: ${JSON.stringify(offer.sdp)}`);
+        console.log(`offer sdp: ${JSON.stringify(offer.sdp)}`);
         // console.log(`Sent offer to peer ${targetId}`, "info");
     } catch (err) {
         console.log(`Error creating connection: ${err}`, "error");
