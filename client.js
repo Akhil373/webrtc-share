@@ -364,7 +364,7 @@ function attachDcHandler(channel) {
                     pendingBuffer = new Uint8Array(msg.fileSize);
                 }
             } catch (err) {
-                console.error("Invalid JSON message: ", e);
+                logMessage("Peer: " + event.data);
             }
             return;
         }
