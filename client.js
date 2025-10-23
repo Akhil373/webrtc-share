@@ -440,6 +440,7 @@ function attachDcHandler(channel) {
 pc.ondatachannel = (event) => {
     //     console.log("Received data channel");
     dc = event.channel;
+    dc.binaryType = "arraybuffer";
     attachDcHandler(dc);
 };
 
@@ -489,6 +490,7 @@ async function makeCall() {
     try {
         if (!dc) {
             dc = pc.createDataChannel("data channel");
+            dc.binaryType = "arraybuffer";
             attachDcHandler(dc);
         }
         const offer = await pc.createOffer();
