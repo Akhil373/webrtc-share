@@ -17,6 +17,9 @@ importers:
       live-server:
         specifier: ^1.2.2
         version: 1.2.2
+      nanoid:
+        specifier: ^5.1.6
+        version: 5.1.6
       tailwindcss:
         specifier: ^4.1.15
         version: 4.1.15
@@ -737,6 +740,11 @@ packages:
 
   nan@2.23.0:
     resolution: {integrity: sha512-1UxuyYGdoQHcGg87Lkqm3FzefucTa0NAiOcuRsDmysep3c1LVCRK2krrUDafMWtjSG04htvAmvg96+SDknOmgQ==}
+
+  nanoid@5.1.6:
+    resolution: {integrity: sha512-c7+7RQ+dMB5dPwwCp4ee1/iV/q2P6aK1mTZcfr1BTuVlyW9hJYiMPybJCcnBlQtuSmTIWNeazm/zqNoZSSElBg==}
+    engines: {node: ^18 || >=20}
+    hasBin: true
 
   nanomatch@1.2.13:
     resolution: {integrity: sha512-fpoe2T0RbHwBTBUOftAfBPaDEi06ufaUai0mE6Yn1kacc3SnTErfb/h+X94VXzI64rKFHYImXSvdwGGCmwOqCA==}
@@ -1742,6 +1750,8 @@ snapshots:
 
   nan@2.23.0:
     optional: true
+
+  nanoid@5.1.6: {}
 
   nanomatch@1.2.13:
     dependencies:
