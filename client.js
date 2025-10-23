@@ -364,7 +364,7 @@ function attachDcHandler(channel) {
                     pendingBuffer = new Uint8Array(msg.fileSize);
                 }
             } catch (err) {
-                logMessage("Peer: " + event.data);
+                console.error("Invalid JSON message: ", e);
             }
             return;
         }
@@ -456,23 +456,10 @@ fileInput.addEventListener("change", () => {
     }
 });
 
-function getRemoteMaxMessageSize() {
-    const sdp = pc.remoteDescription?.sdp;
-    if (!sdp) return null;
-    const match = sdp.match(/a=max-message-size:(\d+)/);
-    return match ? parseInt(match[1], 10) : null;
-}
-
 async function sendFiles() {
     const file = fileInput.files[0];
-    if (!file) fileProg.textContent = "Please pick a file!";
 
-    const maxMsgSize = getRemoteMaxMessageSize();
-    const effectiveSize = 1 * 1024 * 1024 - 2 * 1024;
-    let chunkSize = 64 * 1024;
-    if (maxMsgSize && maxMsgSize >= effectiveSize)
-        console.log(`Maximum message size: ${maxMsgSize}`);
-    chunkSize = Math.max(effectiveSize, chunkSize);
+    const chunkSize = 64 * 1024;
     let offset = 0;
 
     if (!file) {
@@ -525,8 +512,7 @@ async function makeCall() {
             from: myId,
             to: targetId,
         });
-        console.log(`offer sdp: ${JSON.stringify(offer.sdp)}`);
-        // console.log(`Sent offer to peer ${targetId}`, "info");
+        //         console.log(`Sent offer to peer ${targetId}`, "info");
     } catch (err) {
         console.log(`Error creating connection: ${err}`, "error");
     }
