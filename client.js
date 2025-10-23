@@ -456,10 +456,23 @@ fileInput.addEventListener("change", () => {
     }
 });
 
+function getRemoteMaxMessageSize() {
+    const sdp = pc.remoteDescription?.sdp;
+    if (!sdp) return null;
+    const match = sdp.match(/a=max-message-size:(\d+)/);
+    return match ? parseInt(match[1], 10) : null;
+}
+
 async function sendFiles() {
     const file = fileInput.files[0];
+    if (!file) fileProg.textContent = "Please pick a file!";
 
-    const chunkSize = 64 * 1024;
+    const maxMsgSize = getRemoteMaxMessageSize();
+    console.log(`Maximum message size: ${maxMsgSize}`);
+    const effectiveSize = 1 * 1024 * 1024 - 2 * 1024;
+    let chunkSize = 64 * 1024;
+    if (maxMsgSize && maxMsgSize >= effectiveSize)
+        chunkSize = Math.max(effectiveSize, chunkSize);
     let offset = 0;
 
     if (!file) {
@@ -512,7 +525,8 @@ async function makeCall() {
             from: myId,
             to: targetId,
         });
-        //         console.log(`Sent offer to peer ${targetId}`, "info");
+        // console.log(`offer sdp: ${JSON.stringify(offer.sdp)}`);
+        // console.log(`Sent offer to peer ${targetId}`, "info");
     } catch (err) {
         console.log(`Error creating connection: ${err}`, "error");
     }
