@@ -525,7 +525,7 @@ async function makeCall() {
             from: myId,
             to: targetId,
         });
-        // console.log(`offer sdp: ${JSON.stringify(offer.sdp)}`);
+        console.log(`offer sdp: ${JSON.stringify(offer.sdp)}`);
         // console.log(`Sent offer to peer ${targetId}`, "info");
     } catch (err) {
         console.log(`Error creating connection: ${err}`, "error");
