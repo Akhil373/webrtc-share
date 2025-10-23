@@ -11,6 +11,7 @@ const fileInput = document.getElementById("fileShare");
 const fileShareBtn = document.getElementById("send-file-btn");
 const nameEl = document.getElementById("my-name");
 const fileProg = document.getElementById("file-progress");
+const notify = document.getElementById("notify");
 
 function logMessage(message, type = "info") {
     const now = new Date();
@@ -86,7 +87,6 @@ function selectPeer(peer) {
 }
 
 function updateWsStatus(connected) {
-    const notify = document.getElementById("notify");
     if (!connected) {
         notify.style.display = "block";
     } else {
@@ -408,16 +408,14 @@ function attachDcHandler(channel) {
         const blob = new Blob([pendingBuffer], {
             type: receivedfileMetadata.fileType,
         });
-        const url = URL.createObjectURL(blob);
         if (fileProg) {
             fileProg.textContent = "File received!";
         }
+
+        const url = URL.createObjectURL(blob);
         const a = document.createElement("a");
         a.href = url;
         a.download = receivedfileMetadata.fileName;
-        a.textContent = `Download ${receivedfileMetadata.fileName}`;
-        a.style.display = "block";
-        a.style.margin = "10px 0";
 
         const panel = document.getElementById("side-panel");
         if (panel) {
@@ -430,6 +428,9 @@ function attachDcHandler(channel) {
                 "warning",
             );
         }
+        a.click();
+        a.remove();
+        window.URL.revokeObjectURL(url);
 
         receivedfileMetadata = null;
         pendingBuffer = [];
@@ -444,12 +445,22 @@ pc.ondatachannel = (event) => {
     attachDcHandler(dc);
 };
 
+fileInput.addEventListener("change", () => {
+    const file = fileInput.files[0];
+    if (file.size > 1 * 1024 * 1024 * 1024) {
+        notify.textContent = `Caution: Sending large files will use significant memory on the receiver's device.`;
+        notify.style.display = "block";
+        setTimeout(() => {
+            notify.style.display = "none";
+        }, 10_000);
+    }
+});
+
 async function sendFiles() {
     const file = fileInput.files[0];
 
     const chunkSize = 64 * 1024;
     let offset = 0;
-    const total_chunks = chunkSize / file.size;
 
     if (!file) {
         logMessage("Please select a file!");
