@@ -3,7 +3,7 @@ const myIdEl = document.getElementById("my-id");
 const dcStatusEl = document.getElementById("dc-status");
 const selectedPeerEl = document.getElementById("selected-peer");
 const peersListEl = document.getElementById("peers-list");
-const callBtn = document.getElementById("call-btn");
+const connectBtn = document.getElementById("call-btn");
 const messageLogEl = document.getElementById("message-log");
 const messageInput = document.getElementById("message-input");
 const sendBtn = document.getElementById("send-btn");
@@ -60,7 +60,7 @@ function updatePeersList(peers) {
 function selectPeer(peer) {
     targetId = peer.id;
     selectedPeerEl.textContent = `${peer.name} (${peer.id})`;
-    callBtn.disabled = false;
+    connectBtn.disabled = false;
 
     const peerItems = peersListEl.querySelectorAll(".peer-item");
     peerItems.forEach((item) => {
@@ -119,6 +119,7 @@ function updateDcStatus(open) {
 
     messageInput.disabled = !open;
     sendBtn.disabled = !open;
+    connectBtn.disabled = open;
 }
 
 function sendDataChannelMessage() {
@@ -129,7 +130,7 @@ function sendDataChannelMessage() {
     messageInput.value = "";
 }
 
-callBtn.addEventListener("click", () => {
+connectBtn.addEventListener("click", () => {
     if (targetId) {
         makeCall();
     }
@@ -285,14 +286,14 @@ function connectWebsocket() {
     };
 
     ws.onclose = () => {
-        //         console.log("WebSocket connection closed!", "warning");
+        console.log("WebSocket connection closed!", "warning");
         if (!isManuallyClosed) {
             scheduleReconnect();
         }
     };
 
     ws.onerror = (err) => {
-        //         console.log(`WebSocket error: ${JSON.stringify(err)}`, "error");
+        console.log(`WebSocket error: ${JSON.stringify(err)}`, "error");
     };
 }
 
@@ -316,7 +317,7 @@ function sendMessage(message) {
         ws.send(JSON.stringify(message));
         //         console.log(`Sent: ${JSON.stringify(message)}`, "info");
     } else {
-        //         console.log("Error sending message to WebSocket server", "error");
+        console.log("Error sending message to WebSocket server", "error");
     }
 }
 
@@ -338,7 +339,7 @@ pc.onicecandidate = (event) => {
 };
 
 function attachDcHandler(channel) {
-    let pendingBlob = [];
+    let pendingBuffer = [];
     let receivedfileMetadata = null;
     let receivedBytes = 0;
 
@@ -349,15 +350,34 @@ function attachDcHandler(channel) {
 
     channel.onmessage = (event) => {
         const data = event.data;
-        if (data instanceof Blob || data instanceof ArrayBuffer) {
-            if (!receivedfileMetadata) {
+
+        if (typeof data === "string") {
+            try {
+                const msg = JSON.parse(data);
+
+                if (msg.type === "fileMeta") {
+                    receivedfileMetadata = {
+                        fileName: msg.fileName,
+                        fileType: msg.fileType,
+                        fileSize: msg.fileSize,
+                    };
+                    pendingBuffer = new Uint8Array(msg.fileSize);
+                }
+            } catch (err) {
+                console.error("Invalid JSON message: ", e);
+            }
+            return;
+        }
+
+        if (data instanceof ArrayBuffer) {
+            if (!receivedfileMetadata || !pendingBuffer) {
                 console.warn("Got file blob before metadata, buffering...");
-                pendingBlob.push(data);
                 return;
             }
 
-            pendingBlob.push(data);
-            receivedBytes += data.size || data.byteLength;
+            const chunk = new Uint8Array(data);
+            pendingBuffer.set(chunk, receivedBytes);
+            receivedBytes += chunk.byteLength;
             if (fileProg) {
                 const percent = Math.min(
                     100,
@@ -376,40 +396,16 @@ function attachDcHandler(channel) {
             return;
         }
 
-        try {
-            const msg = JSON.parse(data);
-
-            if (msg.type === "fileMeta") {
-                receivedfileMetadata = {
-                    fileName: msg.fileName,
-                    fileType: msg.fileType,
-                    fileSize: msg.fileSize,
-                };
-                //                 console.log("Metadata received:", receivedfileMetadata);
-
-                if (pendingBlob.length > 0) {
-                    receivedBytes = pendingBlob.reduce(
-                        (total, chunk) => total + (chunk.size || chunk.byteLength),
-                        0,
-                    );
-                    if (receivedBytes >= receivedfileMetadata.fileSize) {
-                        processReceivedFile();
-                    }
-                }
-            }
-        } catch (e) {
-            // logMessage("Error parsing message" + e);
-        }
         logMessage("Peer: " + event.data);
     };
 
     channel.onerror = (err) => {
         updateDcStatus(false);
-        //         console.log("Data channel error: " + err, "warning");
+        console.log("Data channel error: " + err, "warning");
     };
 
     function processReceivedFile() {
-        const blob = new Blob(pendingBlob, {
+        const blob = new Blob([pendingBuffer], {
             type: receivedfileMetadata.fileType,
         });
         const url = URL.createObjectURL(blob);
@@ -436,7 +432,7 @@ function attachDcHandler(channel) {
         }
 
         receivedfileMetadata = null;
-        pendingBlob = [];
+        pendingBuffer = [];
         receivedBytes = 0;
     }
 }
@@ -505,7 +501,7 @@ async function makeCall() {
         });
         //         console.log(`Sent offer to peer ${targetId}`, "info");
     } catch (err) {
-        //         console.log(`Error creating connection: ${err}`, "error");
+        console.log(`Error creating connection: ${err}`, "error");
     }
 }
 
