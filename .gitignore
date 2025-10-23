@@ -1,3 +1,5 @@
 node_modules
 test*
 webrtc-signaling/.env
+style1.css
+tailwind.config.*

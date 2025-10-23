@@ -31,7 +31,7 @@ function updatePeersList(peers) {
     const otherPeers = peers.filter((peer) => peer.id !== myId);
 
     if (otherPeers.length === 0) {
-        peersListEl.className = "peers-list empty-state";
+        peersListEl.classList.add("empty-state");
         const message = document.createElement("div");
         message.className = "message";
         message.textContent = "Searching for nearby devices...";
@@ -39,18 +39,18 @@ function updatePeersList(peers) {
         return;
     }
 
-    peersListEl.className = "peers-list";
+    peersListEl.classList.remove("empty-state");
 
     peers.forEach((peer) => {
         if (peer.id !== myId) {
             const peerItem = document.createElement("button");
             peerItem.className = "peer-item";
+            peerItem.style.setProperty("--random-x", `${Math.random() * 4 - 2}px`);
+            peerItem.style.setProperty("--random-y", `${Math.random() * 4 - 2}px`);
 
             const peerInfo = document.createElement("div");
             peerInfo.innerHTML = `<div class="peer-name">${peer.name || "Unknown"}</div><div class="peer-id">ID: ${peer.id}</div>`;
-
             peerItem.onclick = () => selectPeer(peer);
-
             peerItem.appendChild(peerInfo);
             peersListEl.appendChild(peerItem);
         }
@@ -114,7 +114,7 @@ function updateDcStatus(open) {
     el.className = `status-value ${cls}`;
 
     const elM = document.getElementById("dc-status-m");
-    elM.textContent = connected ? "●" : "●";
+    elM.textContent = cls ? "●" : "●";
     elM.className = `status-value ${cls}`;
 
     messageInput.disabled = !open;
