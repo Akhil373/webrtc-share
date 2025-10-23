@@ -1,4 +1,5 @@
 import { wss } from "./ws-server.js";
+import { nanoid } from "nanoid";
 const broadcastClients = () => {
     const clientsList = [];
     wss.clients.forEach((client) => {
@@ -18,7 +19,7 @@ const broadcastClients = () => {
 };
 
 wss.on("connection", function connection(ws) {
-    ws.id = crypto.randomUUID();
+    ws.id = nanoid(8);
     ws.send(JSON.stringify({ yourID: ws.id }));
     broadcastClients();
 
