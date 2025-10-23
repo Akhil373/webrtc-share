@@ -1,146 +1,223 @@
 <!doctype html>
 <html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>WebRTC Peer2Peer Connection</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" type="" href="style.css" />
+  </head>
 
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>WebRTC Peer2Peer Connection</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <link rel="stylesheet" type="" href="style.css" />
-</head>
+  <body class="bg-black min-h-screen p-4 md:p-6 lg:p-8">
+    <div class="container max-w-7xl mx-auto flex flex-col gap-4 md:gap-6">
+      <header class="text-center py-4 md:py-6">
+        <h1
+          class="text-3xl md:text-4xl lg:text-5xl font-bold mb-2 md:mb-3"
+          style="color: #98971a; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3)"
+        >
+          peer-to-peer connection.
+        </h1>
+        <p
+          class="subtitle text-base md:text-lg lg:text-xl"
+          style="color: #8ec07c"
+        >
+          file & message share, directly
+        </p>
+      </header>
 
-<body class="bg-black min-h-screen p-4 md:p-6 lg:p-8">
-  <div class="container max-w-7xl mx-auto flex flex-col gap-4 md:gap-6">
-
-    <header class="text-center py-4 md:py-6">
-      <h1 class="text-3xl md:text-4xl lg:text-5xl font-bold mb-2 md:mb-3"
-        style="color: #98971a; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3)">
-        peer-to-peer connection.
-      </h1>
-      <p class="subtitle text-base md:text-lg lg:text-xl" style="color: #8ec07c">
-        file & message share, directly
-      </p>
-    </header>
-
-    <!-- Status Bar -->
-    <div id="status-bar"
-      class="status-bar md:hidden grid grid-cols-3 gap-3 bg-white/10 text-white p-3 rounded-lg shadow-lg text-xs">
-      <div class="status-item text-center">
-        <div class="status-label opacity-70">WS</div>
-        <div id="ws-status" class="status-value disconnected font-semibold">●</div>
-      </div>
-      <div class="status-item text-center">
-        <div class="status-label opacity-70">ID</div>
-        <div id="my-id" class="status-value font-semibold">-</div>
-      </div>
-      <div class="status-item text-center">
-        <div class="status-label opacity-70">DC</div>
-        <div id="dc-status" class="status-value disconnected font-semibold">●</div>
-      </div>
-    </div>
-    <div
-      class="status-bar hidden md:flex flex-wrap justify-between gap-3 bg-white bg-opacity-10 text-white p-4 rounded-lg shadow-lg"
-      id="status-bar">
-      <div class="status-item flex flex-col items-center min-w-[120px]">
-        <div class="status-label text-sm opacity-80 mb-1">
-          WebSocket Status
-        </div>
-        <div id="ws-status" class="status-value disconnected font-bold text-base" style="color: #cc214d">
-          Disconnected
-        </div>
-      </div>
-      <div class="status-item flex flex-col items-center min-w-[120px]">
-        <div class="status-label text-sm opacity-80 mb-1">Your ID</div>
-        <div id="my-id" class="status-value font-bold text-base" style="color: #d79921">
-          Not registered
-        </div>
-      </div>
-      <div class="status-item flex flex-col items-center min-w-[120px]">
-        <div class="status-label text-sm opacity-80 mb-1">Your Name</div>
-        <div id="my-name" class="status-value font-bold text-base" style="color: #d79921">
-          Not registered
-        </div>
-      </div>
-      <div class="status-item flex flex-col items-center min-w-[120px]">
-        <div class="status-label text-sm opacity-80 mb-1">Data Channel</div>
-        <div id="dc-status" class="status-value disconnected font-bold text-base" style="color: #cc214d">
-          Closed
-        </div>
-      </div>
-      <div class="status-item flex flex-col items-center min-w-[120px]">
-        <div class="status-label text-sm opacity-80 mb-1">Selected Peer</div>
-        <div id="selected-peer" class="status-value font-bold text-base" style="color: #d79921">
-          None
-        </div>
-      </div>
-    </div>
-
-    <!-- Main Content -->
-    <div class="main-content flex flex-col lg:flex-row gap-4 md:gap-6">
-      <!-- Side Panel -->
-      <div class="panel rounded-lg p-4 md:p-6 shadow-lg flex-1 lg:min-w-[350px]" id="side-panel"
-        style="background: #1d2021; color: white">
-        <h2 class="text-xl md:text-2xl mb-4 pb-3 border-b border-white border-opacity-20">
-          Available Peers
-        </h2>
-
-        <ul id="peers-list"
-          class="peers-list min-h-[300px] grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4 md:min-h-[300px] overflow-y-auto justify-items-center content-start p-2 md:p-4">
-        </ul>
-
-        <div class="action-buttons flex gap-2 md:gap-3 mt-4 md:mt-6">
-          <button id="call-btn"
-            class="btn btn-success flex-1 px-4 py-2.5 md:px-5 md:py-3 rounded-lg font-bold transition-all disabled:bg-gray-600 disabled:cursor-not-allowed text-sm md:text-base"
-            style="background: #4caf50; color: white" disabled>
-            Connect
-          </button>
-        </div>
-
-        <div class="flex flex-col sm:flex-row justify-center items-stretch sm:items-center gap-3 my-4 md:my-6">
-          <label for="fileShare"
-            class="file-input-label inline-block px-4 py-2.5 rounded-md border border-dashed cursor-pointer transition-all text-center text-sm md:text-base"
-            id="file-input-label" style="color: #8ec07c; border-color: #458588">
-            📎 choose files to send...
-          </label>
-          <input type="file" name="fileShare" id="fileShare" class="file-input" multiple />
-          <button type="button"
-            class="btn btn-primary px-4 py-2.5 rounded-lg font-bold transition-all text-sm md:text-base"
-            id="send-file-btn" style="background: #2196f3; color: white">
-            send
-          </button>
-        </div>
-
-        <div id="file-progress" class="min-h-[1.4em] mt-2 text-xs md:text-sm text-gray-400 px-1"></div>
-      </div>
-
-      <!-- Message Panel -->
-      <div class="panel rounded-lg p-4 md:p-6 shadow-lg flex-1" style="background: #1d2021; color: white">
-        <h2 class="text-xl md:text-2xl mb-4 pb-3 border-b border-white border-opacity-20">
-          connection log
-        </h2>
-
-        <div id="message-log"
-          class="message-log bg-black bg-opacity-20 rounded-lg p-3 md:p-4 h-[250px] md:h-[300px] overflow-y-auto font-mono text-xs md:text-sm">
-          <div class="log-entry mb-2 pb-2 border-b border-white border-opacity-10">
-            <span class="log-time text-gray-400 text-xs">[00:00:00]</span>
-            <span class="log-info" style="color: #4caf50">Application Started.</span>
+      <!-- Status Bar -->
+      <div
+        id="status-bar"
+        class="status-bar md:hidden grid grid-cols-3 gap-3 bg-white/10 text-white p-3 rounded-lg shadow-lg text-xs"
+      >
+        <div class="status-item text-center">
+          <div class="status-label opacity-70">WS</div>
+          <div id="ws-status-m" class="status-value disconnected font-semibold">
+            ●
           </div>
         </div>
+        <div class="status-item text-center">
+          <div class="status-label opacity-70">ID</div>
+          <div id="my-id" class="status-value font-semibold">-</div>
+        </div>
+        <div class="status-item text-center">
+          <div class="status-label opacity-70">DC</div>
+          <div id="dc-status" class="status-value disconnected font-semibold">
+            ●
+          </div>
+        </div>
+      </div>
+      <div
+        class="status-bar hidden md:flex flex-wrap justify-between gap-3 bg-white bg-opacity-10 text-white p-4 rounded-lg shadow-lg"
+        id="status-bar"
+      >
+        <div class="status-item flex flex-col items-center min-w-[120px]">
+          <div class="status-label text-sm opacity-80 mb-1">
+            WebSocket Status
+          </div>
+          <div
+            id="ws-status"
+            class="status-value disconnected font-bold text-base"
+            style="color: #cc214d"
+          >
+            Disconnected
+          </div>
+        </div>
+        <div class="status-item flex flex-col items-center min-w-[120px]">
+          <div class="status-label text-sm opacity-80 mb-1">Your ID</div>
+          <div
+            id="my-id"
+            class="status-value font-bold text-base"
+            style="color: #d79921"
+          >
+            Not registered
+          </div>
+        </div>
+        <div class="status-item flex flex-col items-center min-w-[120px]">
+          <div class="status-label text-sm opacity-80 mb-1">Your Name</div>
+          <div
+            id="my-name"
+            class="status-value font-bold text-base"
+            style="color: #d79921"
+          >
+            Not registered
+          </div>
+        </div>
+        <div class="status-item flex flex-col items-center min-w-[120px]">
+          <div class="status-label text-sm opacity-80 mb-1">Data Channel</div>
+          <div
+            id="dc-status"
+            class="status-value disconnected font-bold text-base"
+            style="color: #cc214d"
+          >
+            Closed
+          </div>
+        </div>
+        <div class="status-item flex flex-col items-center min-w-[120px]">
+          <div class="status-label text-sm opacity-80 mb-1">Selected Peer</div>
+          <div
+            id="selected-peer"
+            class="status-value font-bold text-base"
+            style="color: #d79921"
+          >
+            None
+          </div>
+        </div>
+      </div>
 
-        <div class="message-input flex gap-3 md:gap-4 mt-4" style="background: #282828">
-          <input type="text" id="message-input" placeholder="Type a message to send..."
-            class="flex-1 px-3 bg-[#282828] py-2 md:px-4 md:py-2.5 rounded-lg border-none text-sm md:text-base"
-            disabled />
-          <button id="send-btn" class="px-4 py-2 md:px-5 md:py-2.5 rounded-lg font-bold text-sm md:text-base"
-            style="background: #2196f3; color: white" disabled>
-            Send
-          </button>
+      <!-- Main Content -->
+      <div class="main-content flex flex-col lg:flex-row gap-4 md:gap-6">
+        <!-- Side Panel -->
+        <div
+          class="panel rounded-lg p-4 md:p-6 shadow-lg flex-1 lg:min-w-[350px]"
+          id="side-panel"
+          style="background: #1d2021; color: white"
+        >
+          <h2
+            class="text-xl md:text-2xl mb-4 pb-3 border-b border-white border-opacity-20"
+          >
+            Available Peers
+          </h2>
+
+          <ul
+            id="peers-list"
+            class="peers-list min-h-[300px] grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4 md:min-h-[300px] overflow-y-auto justify-items-center content-start p-2 md:p-4"
+          ></ul>
+
+          <div class="action-buttons flex gap-2 md:gap-3 mt-4 md:mt-6">
+            <button
+              id="call-btn"
+              class="btn btn-success flex-1 px-4 py-2.5 md:px-5 md:py-3 rounded-lg font-bold transition-all disabled:bg-gray-600 disabled:cursor-not-allowed text-sm md:text-base"
+              style="background: #4caf50; color: white"
+              disabled
+            >
+              Connect
+            </button>
+          </div>
+
+          <div
+            class="flex flex-col sm:flex-row justify-center items-stretch sm:items-center gap-3 my-4 md:my-6"
+          >
+            <label
+              for="fileShare"
+              class="file-input-label inline-block px-4 py-2.5 rounded-md border border-dashed cursor-pointer transition-all text-center text-sm md:text-base"
+              id="file-input-label"
+              style="color: #8ec07c; border-color: #458588"
+            >
+              📎 choose files to send...
+            </label>
+            <input
+              type="file"
+              name="fileShare"
+              id="fileShare"
+              class="file-input"
+              multiple
+            />
+            <button
+              type="button"
+              class="btn btn-primary px-4 py-2.5 rounded-lg font-bold transition-all text-sm md:text-base"
+              id="send-file-btn"
+              style="background: #2196f3; color: white"
+            >
+              send
+            </button>
+          </div>
+
+          <div
+            id="file-progress"
+            class="min-h-[1.4em] mt-2 text-xs md:text-sm text-gray-400 px-1"
+          ></div>
+        </div>
+
+        <!-- Message Panel -->
+        <div
+          class="panel rounded-lg p-4 md:p-6 shadow-lg flex-1"
+          style="background: #1d2021; color: white"
+        >
+          <h2
+            class="text-xl md:text-2xl mb-4 pb-3 border-b border-white border-opacity-20"
+          >
+            connection log
+          </h2>
+
+          <div
+            id="message-log"
+            class="message-log bg-black bg-opacity-20 rounded-lg p-3 md:p-4 h-[250px] md:h-[300px] overflow-y-auto font-mono text-xs md:text-sm"
+          >
+            <div
+              class="log-entry mb-2 pb-2 border-b border-white border-opacity-10"
+            >
+              <span class="log-time text-gray-400 text-xs">[00:00:00]</span>
+              <span class="log-info" style="color: #4caf50"
+                >Application Started.</span
+              >
+            </div>
+          </div>
+
+          <div
+            class="message-input flex gap-3 md:gap-4 mt-4"
+            style="background: #282828"
+          >
+            <input
+              type="text"
+              id="message-input"
+              placeholder="Type a message to send..."
+              class="flex-1 px-3 bg-[#282828] py-2 md:px-4 md:py-2.5 rounded-lg border-none text-sm md:text-base"
+              disabled
+            />
+            <button
+              id="send-btn"
+              class="px-4 py-2 md:px-5 md:py-2.5 rounded-lg font-bold text-sm md:text-base"
+              style="background: #2196f3; color: white"
+              disabled
+            >
+              Send
+            </button>
+          </div>
         </div>
       </div>
     </div>
-  </div>
 
-  <script src="client.js" type="module"></script>
-</body>
-
+    <script src="client.js" type="module"></script>
+  </body>
 </html>

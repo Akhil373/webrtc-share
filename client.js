@@ -86,8 +86,16 @@ function selectPeer(peer) {
 }
 
 function updateWsStatus(connected) {
-    wsStatusEl.textContent = connected ? "Connected" : "Disconnected";
-    wsStatusEl.className = `status-value ${connected ? "connected" : "disconnected"}`;
+    const txt = connected ? "Connected" : "Disconnected";
+    const cls = connected ? "connected" : "disconnected";
+
+    const el = document.getElementById("ws-status");
+    el.textContent = txt;
+    el.className = `status-value ${cls}`;
+
+    const elM = document.getElementById("ws-status-m");
+    elM.textContent = connected ? "●" : "●";
+    elM.className = `status-value ${cls}`;
 }
 
 function updateDcStatus(open) {
