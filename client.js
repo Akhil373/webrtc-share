@@ -3,7 +3,6 @@ const myIdEl = document.getElementById("my-id");
 const dcStatusEl = document.getElementById("dc-status");
 const selectedPeerEl = document.getElementById("selected-peer");
 const peersListEl = document.getElementById("peers-list");
-const refreshBtn = document.getElementById("refresh-btn");
 const callBtn = document.getElementById("call-btn");
 const messageLogEl = document.getElementById("message-log");
 const messageInput = document.getElementById("message-input");
@@ -29,30 +28,30 @@ function logMessage(message, type = "info") {
 
 function updatePeersList(peers) {
     peersListEl.innerHTML = "";
+    const otherPeers = peers.filter((peer) => peer.id !== myId);
 
-    if (peers.length === 0) {
-        const emptyItem = document.createElement("li");
-        emptyItem.className = "peer-item empty";
-        emptyItem.textContent = "No peers available";
-        peersListEl.appendChild(emptyItem);
+    if (otherPeers.length === 0) {
+        peersListEl.className = "peers-list empty-state";
+        const message = document.createElement("div");
+        message.className = "message";
+        message.textContent = "Searching for nearby devices...";
+        peersListEl.appendChild(message);
         return;
     }
 
+    peersListEl.className = "peers-list";
+
     peers.forEach((peer) => {
         if (peer.id !== myId) {
-            const peerItem = document.createElement("li");
+            const peerItem = document.createElement("button");
             peerItem.className = "peer-item";
 
             const peerInfo = document.createElement("div");
             peerInfo.innerHTML = `<div class="peer-name">${peer.name || "Unknown"}</div><div class="peer-id">ID: ${peer.id}</div>`;
 
-            const selectBtn = document.createElement("button");
-            selectBtn.className = "select-btn";
-            selectBtn.textContent = "Select";
-            selectBtn.onclick = () => selectPeer(peer);
+            peerItem.onclick = () => selectPeer(peer);
 
             peerItem.appendChild(peerInfo);
-            peerItem.appendChild(selectBtn);
             peersListEl.appendChild(peerItem);
         }
     });
@@ -107,10 +106,6 @@ function sendDataChannelMessage() {
     messageInput.value = "";
 }
 
-refreshBtn.addEventListener("click", () => {
-    console.log("Refreshing peer list...", "info");
-});
-
 callBtn.addEventListener("click", () => {
     if (targetId) {
         makeCall();
@@ -123,6 +118,16 @@ messageInput.addEventListener("keypress", (e) => {
     if (e.key === "Enter") {
         sendDataChannelMessage();
     }
+});
+
+fileInput.addEventListener("change", (e) => {
+    const files = e.target.files;
+    const fileNames = Array.from(files)
+        .map((f) => f.name)
+        .join(", ");
+    document.getElementById("file-input-label").textContent = files.length
+        ? `📁 ${fileNames}`
+        : "";
 });
 
 fileShareBtn.addEventListener("click", sendFiles);
@@ -153,8 +158,8 @@ function getUserDetails() {
 
     if (userAgent.indexOf("Win") !== -1) OSName = "Windows";
     else if (userAgent.indexOf("Mac") !== -1) OSName = "MacOS";
-    else if (userAgent.indexOf("X11") !== -1) OSName = "UNIX";
-    else if (userAgent.indexOf("Linux") !== -1) OSName = "Linux";
+    else if (userAgent.indexOf("Linux") || userAgent.indexOf("X11") !== -1)
+        OSName = "Linux";
     else if (userAgent.indexOf("Android") !== -1) OSName = "Android";
     else if (userAgent.indexOf("iOS") !== -1) OSName = "iOS";
 
@@ -195,66 +200,92 @@ pc.onconnectionstatechange = () => {
     console.log(`Connection state: ${pc.connectionState}`, "info");
 };
 
-const ws = new WebSocket("wss://webrtc-share.onrender.com");
+let ws = null;
+let reconnectTimeout = null;
+let isManuallyClosed = false;
 
-ws.onopen = () => {
-    updateWsStatus(true);
-    console.log("WebSocket connected!", "info");
+function connectWebsocket() {
+    if (isManuallyClosed) return;
 
-    const [osName, browser] = getUserDetails();
-    const myName = `${browser}@${osName}`;
-    nameEl.textContent = myName;
-    sendMessage({
-        type: "register",
-        name: myName,
-    });
-};
+    ws = new WebSocket("wss://webrtc-share.onrender.com");
 
-ws.onmessage = async (event) => {
-    const message = JSON.parse(event.data);
-    console.log(`Received: ${JSON.stringify(message)}`, "info");
-    if (message.yourID) {
-        myId = message.yourID;
-        myIdEl.textContent = myId;
-        console.log(`Registered with ID: ${myId}`, "info");
-        return;
-    }
+    ws.onopen = () => {
+        updateWsStatus(true);
+        console.log("WebSocket connected!", "info");
 
-    if (message.type == "clientsList") {
-        peerList = message.content || [];
-        updatePeersList(peerList);
-        console.log(`Updated peer list with ${peerList.length} peers`, "info");
-    } else if (message.from === myId) {
-        console.log("Ignoring messages from myself.");
-        return;
-    } else if (message.type === "offer") {
-        await pc.setRemoteDescription(new RTCSessionDescription(message));
-        const answer = await pc.createAnswer();
-        await pc.setLocalDescription(answer);
+        const [osName, browser] = getUserDetails();
+        const myName = `${browser}@${osName}`;
+        nameEl.textContent = myName;
         sendMessage({
-            type: "answer",
-            sdp: answer.sdp,
-            from: myId,
-            to: message.from,
+            type: "register",
+            name: myName,
         });
-        console.log(`Sent answer to peer ${message.from}`, "info");
-    } else if (message.type === "answer") {
-        await pc.setRemoteDescription(new RTCSessionDescription(message));
-        console.log(`Received and set answer from peer ${message.from}`, "info");
-    } else if (message.type === "ice-candidate") {
-        await pc.addIceCandidate(new RTCIceCandidate(message.candidate));
-        console.log(`Added ICE candidate from peer ${message.from}`, "info");
-    }
-};
+    };
 
-ws.onclose = () => {
-    updateWsStatus(false);
-    console.log("WebSocket connection closed!", "warning");
-};
+    ws.onmessage = async (event) => {
+        const message = JSON.parse(event.data);
+        console.log(`Received: ${JSON.stringify(message)}`, "info");
+        if (message.yourID) {
+            myId = message.yourID;
+            myIdEl.textContent = myId;
+            console.log(`Registered with ID: ${myId}`, "info");
+            return;
+        }
 
-ws.onerror = (err) => {
-    console.log(`WebSocket error: ${err}`, "error");
-};
+        if (message.type == "clientsList") {
+            peerList = message.content || [];
+            updatePeersList(peerList);
+            console.log(`Updated peer list with ${peerList.length} peers`, "info");
+        } else if (message.from === myId) {
+            console.log("Ignoring messages from myself.");
+            return;
+        } else if (message.type === "offer") {
+            await pc.setRemoteDescription(new RTCSessionDescription(message));
+            const answer = await pc.createAnswer();
+            await pc.setLocalDescription(answer);
+            sendMessage({
+                type: "answer",
+                sdp: answer.sdp,
+                from: myId,
+                to: message.from,
+            });
+            console.log(`Sent answer to peer ${message.from}`, "info");
+        } else if (message.type === "answer") {
+            await pc.setRemoteDescription(new RTCSessionDescription(message));
+            console.log(`Received and set answer from peer ${message.from}`, "info");
+        } else if (message.type === "ice-candidate") {
+            await pc.addIceCandidate(new RTCIceCandidate(message.candidate));
+            console.log(`Added ICE candidate from peer ${message.from}`, "info");
+        }
+    };
+
+    ws.onclose = () => {
+        updateWsStatus(false);
+        console.log("WebSocket connection closed!", "warning");
+        if (!isManuallyClosed) {
+            scheduleReconnect();
+        }
+    };
+
+    ws.onerror = (err) => {
+        console.log(`WebSocket error: ${JSON.stringify(err)}`, "error");
+    };
+}
+
+function scheduleReconnect(delay = 2000) {
+    console.log(`Reconnecting in ${delay}ms`);
+    reconnectTimeout = setTimeout(() => {
+        connectWebsocket();
+    }, delay);
+}
+
+connectWebsocket();
+
+function closeWebSocket() {
+    isManuallyClosed = true;
+    if (ws) ws.close();
+    clearTimeout(reconnectTimeout);
+}
 
 function sendMessage(message) {
     if (ws.readyState === WebSocket.OPEN) {
@@ -343,7 +374,7 @@ function attachDcHandler(channel) {
                 }
             }
         } catch (e) {
-            logMessage("Peer: " + data);
+            // logMessage("Error parsing message" + e);
         }
         logMessage("Peer: " + event.data);
     };

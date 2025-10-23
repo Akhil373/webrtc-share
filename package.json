@@ -13,11 +13,9 @@
   "license": "ISC",
   "packageManager": "pnpm@10.19.0",
   "dependencies": {
-    "@tailwindcss/cli": "^4.1.15",
     "dotenv": "^17.2.3",
     "live-server": "^1.2.2",
     "nanoid": "^5.1.6",
-    "tailwindcss": "^4.1.15",
     "ws": "^8.18.3"
   }
 }

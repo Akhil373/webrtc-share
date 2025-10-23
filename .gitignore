@@ -1,2 +1,3 @@
 node_modules
+test*
 webrtc-signaling/.env
