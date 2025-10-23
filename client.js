@@ -23,7 +23,7 @@ function logMessage(message, type = "info") {
     messageLogEl.appendChild(logEntry);
     messageLogEl.scrollTop = messageLogEl.scrollHeight;
 
-    console.log(`${timeString} ${message}`);
+    //     console.log(`${timeString} ${message}`);
 }
 
 function updatePeersList(peers) {
@@ -82,10 +82,17 @@ function selectPeer(peer) {
         }
     }
 
-    console.log(`Selected peer: ${peer.name} (${peer.id})`, "info");
+    //     console.log(`Selected peer: ${peer.name} (${peer.id})`, "info");
 }
 
 function updateWsStatus(connected) {
+    const notify = document.getElementById("notify");
+    if (!connected) {
+        notify.style.display = "block";
+    } else {
+        notify.style.display = "none";
+    }
+
     const txt = connected ? "Connected" : "Disconnected";
     const cls = connected ? "connected" : "disconnected";
 
@@ -99,8 +106,16 @@ function updateWsStatus(connected) {
 }
 
 function updateDcStatus(open) {
-    dcStatusEl.textContent = open ? "Open" : "Closed";
-    dcStatusEl.className = `status-value ${open ? "connected" : "disconnected"}`;
+    const txt = open ? "Connected" : "Disconnected";
+    const cls = open ? "connected" : "disconnected";
+
+    const el = document.getElementById("dc-status");
+    el.textContent = txt;
+    el.className = `status-value ${cls}`;
+
+    const elM = document.getElementById("dc-status-m");
+    elM.textContent = connected ? "●" : "●";
+    elM.className = `status-value ${cls}`;
 
     messageInput.disabled = !open;
     sendBtn.disabled = !open;
@@ -192,7 +207,7 @@ function getUserDetails() {
 }
 
 pc.oniceconnectionstatechange = () => {
-    console.log(`ICE connection state: ${pc.iceConnectionState}`, "info");
+    //     console.log(`ICE connection state: ${pc.iceConnectionState}`, "info");
 
     if (
         pc.iceConnectionState === "failed" ||
@@ -205,12 +220,14 @@ pc.oniceconnectionstatechange = () => {
 };
 
 pc.onconnectionstatechange = () => {
-    console.log(`Connection state: ${pc.connectionState}`, "info");
+    //     console.log(`Connection state: ${pc.connectionState}`, "info");
 };
 
 let ws = null;
 let reconnectTimeout = null;
 let isManuallyClosed = false;
+
+updateWsStatus(false);
 
 function connectWebsocket() {
     if (isManuallyClosed) return;
@@ -219,7 +236,7 @@ function connectWebsocket() {
 
     ws.onopen = () => {
         updateWsStatus(true);
-        console.log("WebSocket connected!", "info");
+        //         console.log("WebSocket connected!", "info");
 
         const [osName, browser] = getUserDetails();
         const myName = `${browser}@${osName}`;
@@ -232,20 +249,20 @@ function connectWebsocket() {
 
     ws.onmessage = async (event) => {
         const message = JSON.parse(event.data);
-        console.log(`Received: ${JSON.stringify(message)}`, "info");
+        //         console.log(`Received: ${JSON.stringify(message)}`, "info");
         if (message.yourID) {
             myId = message.yourID;
             myIdEl.textContent = myId;
-            console.log(`Registered with ID: ${myId}`, "info");
+            //             console.log(`Registered with ID: ${myId}`, "info");
             return;
         }
 
         if (message.type == "clientsList") {
             peerList = message.content || [];
             updatePeersList(peerList);
-            console.log(`Updated peer list with ${peerList.length} peers`, "info");
+            //             console.log(`Updated peer list with ${peerList.length} peers`, "info");
         } else if (message.from === myId) {
-            console.log("Ignoring messages from myself.");
+            //             console.log("Ignoring messages from myself.");
             return;
         } else if (message.type === "offer") {
             await pc.setRemoteDescription(new RTCSessionDescription(message));
@@ -257,31 +274,30 @@ function connectWebsocket() {
                 from: myId,
                 to: message.from,
             });
-            console.log(`Sent answer to peer ${message.from}`, "info");
+            //             console.log(`Sent answer to peer ${message.from}`, "info");
         } else if (message.type === "answer") {
             await pc.setRemoteDescription(new RTCSessionDescription(message));
-            console.log(`Received and set answer from peer ${message.from}`, "info");
+            //             console.log(`Received and set answer from peer ${message.from}`, "info");
         } else if (message.type === "ice-candidate") {
             await pc.addIceCandidate(new RTCIceCandidate(message.candidate));
-            console.log(`Added ICE candidate from peer ${message.from}`, "info");
+            //             console.log(`Added ICE candidate from peer ${message.from}`, "info");
         }
     };
 
     ws.onclose = () => {
-        updateWsStatus(false);
-        console.log("WebSocket connection closed!", "warning");
+        //         console.log("WebSocket connection closed!", "warning");
         if (!isManuallyClosed) {
             scheduleReconnect();
         }
     };
 
     ws.onerror = (err) => {
-        console.log(`WebSocket error: ${JSON.stringify(err)}`, "error");
+        //         console.log(`WebSocket error: ${JSON.stringify(err)}`, "error");
     };
 }
 
 function scheduleReconnect(delay = 2000) {
-    console.log(`Reconnecting in ${delay}ms`);
+    //     console.log(`Reconnecting in ${delay}ms`);
     reconnectTimeout = setTimeout(() => {
         connectWebsocket();
     }, delay);
@@ -298,16 +314,16 @@ function closeWebSocket() {
 function sendMessage(message) {
     if (ws.readyState === WebSocket.OPEN) {
         ws.send(JSON.stringify(message));
-        console.log(`Sent: ${JSON.stringify(message)}`, "info");
+        //         console.log(`Sent: ${JSON.stringify(message)}`, "info");
     } else {
-        console.log("Error sending message to WebSocket server", "error");
+        //         console.log("Error sending message to WebSocket server", "error");
     }
 }
 
 pc.onicecandidate = (event) => {
     if (event.candidate) {
         if (event.candidate.candidate.includes(".local")) {
-            console.log("Skipping .local candidate", "info");
+            //             console.log("Skipping .local candidate", "info");
             return;
         }
 
@@ -317,7 +333,7 @@ pc.onicecandidate = (event) => {
             from: myId,
             to: targetId,
         });
-        console.log(`Sent ICE candidate to peer ${targetId}`, "info");
+        //         console.log(`Sent ICE candidate to peer ${targetId}`, "info");
     }
 };
 
@@ -328,7 +344,7 @@ function attachDcHandler(channel) {
 
     channel.onopen = () => {
         updateDcStatus(true);
-        console.log("Data Channel is active");
+        //         console.log("Data Channel is active");
     };
 
     channel.onmessage = (event) => {
@@ -369,7 +385,7 @@ function attachDcHandler(channel) {
                     fileType: msg.fileType,
                     fileSize: msg.fileSize,
                 };
-                console.log("Metadata received:", receivedfileMetadata);
+                //                 console.log("Metadata received:", receivedfileMetadata);
 
                 if (pendingBlob.length > 0) {
                     receivedBytes = pendingBlob.reduce(
@@ -389,7 +405,7 @@ function attachDcHandler(channel) {
 
     channel.onerror = (err) => {
         updateDcStatus(false);
-        console.log("Data channel error: " + err, "warning");
+        //         console.log("Data channel error: " + err, "warning");
     };
 
     function processReceivedFile() {
@@ -426,7 +442,7 @@ function attachDcHandler(channel) {
 }
 
 pc.ondatachannel = (event) => {
-    console.log("Received data channel");
+    //     console.log("Received data channel");
     dc = event.channel;
     attachDcHandler(dc);
 };
@@ -487,10 +503,10 @@ async function makeCall() {
             from: myId,
             to: targetId,
         });
-        console.log(`Sent offer to peer ${targetId}`, "info");
+        //         console.log(`Sent offer to peer ${targetId}`, "info");
     } catch (err) {
-        console.log(`Error creating connection: ${err}`, "error");
+        //         console.log(`Error creating connection: ${err}`, "error");
     }
 }
 
-console.log("WebRTC Peer Connection Tester initialized", "info");
+// console.log("WebRTC Peer Connection Tester initialized", "info");

@@ -17,6 +17,20 @@
   border: 0;
 }
 
+.animate-bounce-2 {
+  animation: bounce 1s ease-in infinite;
+  animation-iteration-count: 2;
+}
+
+@keyframes bounce {
+  0%, 100% {
+    transform: translateY(-0%);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
 @keyframes sonar {
   0% {
     transform: scale(.35);

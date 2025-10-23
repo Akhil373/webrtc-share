@@ -10,6 +10,13 @@
 
   <body class="bg-black min-h-screen p-4 md:p-6 lg:p-8">
     <div class="container max-w-7xl mx-auto flex flex-col gap-4 md:gap-6">
+      <div
+        id="notify"
+        class="hidden text-[#458588] absolute bg-black animate-bounce-2 top-5 right-5 border-2 border-solid border-red-500 p-2"
+      >
+        <span class="text-[#cc241d]">● </span>Starting up... This may take a few
+        seconds on first launch.
+      </div>
       <header class="text-center py-4 md:py-6">
         <h1
           class="text-3xl md:text-4xl lg:text-5xl font-bold mb-2 md:mb-3"
@@ -42,7 +49,7 @@
         </div>
         <div class="status-item text-center">
           <div class="status-label opacity-70">DC</div>
-          <div id="dc-status" class="status-value disconnected font-semibold">
+          <div id="dc-status-m" class="status-value disconnected font-semibold">
             ●
           </div>
         </div>
