@@ -32,7 +32,7 @@ const broadcastClients = (roomId) => {
 wss.on("connection", function connection(ws) {
     ws.id = nanoid(8);
     ws.send(JSON.stringify({ yourID: ws.id }));
-    broadcastClients(ws.roomId);
+    // broadcastClients(ws.roomId);
 
     ws.on("message", function message(data) {
         const msg = JSON.parse(data);
@@ -74,6 +74,7 @@ wss.on("connection", function connection(ws) {
             case "leave-room":
                 leaveRoom(ws);
                 ws.send(JSON.stringify({ type: "left" }));
+                break;
 
             default:
                 wss.clients.forEach((client) => {

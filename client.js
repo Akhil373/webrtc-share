@@ -287,7 +287,7 @@ function connectWebsocket() {
         else if (message.type === "joined") {
             document.getElementById("join-room").style.display = "none";
             document.getElementById("main-ui").style.display = "block";
-            notify.textContent = `Joined room-ID: ${ROOM_ID}`;
+            notify.textContent = `Joined room-ID: ${message.roomId}`;
             notify.style.display = "block";
             setTimeout(() => {
                 notify.style.display = "none";
@@ -295,6 +295,7 @@ function connectWebsocket() {
         } else if (message.type == "clientsList") {
             peerList = message.content || [];
             updatePeersList(peerList);
+            console.log(peerList);
         } else if (message.type === "offer") {
             await pc.setRemoteDescription(new RTCSessionDescription(message));
             const answer = await pc.createAnswer();
