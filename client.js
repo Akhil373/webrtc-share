@@ -147,10 +147,11 @@ joinBtn.addEventListener("click", () => {
         alert("Enter a room code");
         return;
     }
+    ROOM_ID = ROOM_CODE;
     if (ws && ws.readyState === WebSocket.OPEN) {
-        sendWsMessage({ type: "join-room", roomId: ROOM_CODE });
+        sendWsMessage({ type: "join-room", roomId: ROOM_ID });
     } else {
-        pendingRoom = ROOM_CODE;
+        pendingRoom = ROOM_ID;
     }
 });
 
@@ -360,7 +361,7 @@ pc.onicecandidate = (event) => {
             candidate: event.candidate,
             from: myId,
             to: targetId,
-            roomId: message.roomId,
+            roomId: ROOM_ID,
         });
         //         console.log(`Sent ICE candidate to peer ${targetId}`, "info");
     }
