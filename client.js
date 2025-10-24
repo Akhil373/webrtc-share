@@ -11,8 +11,10 @@ const nameEl = document.getElementById("my-name");
 const fileProg = document.getElementById("file-progress");
 const notify = document.getElementById("notify");
 const createBtn = document.getElementById("create-btn");
+const joinBtn = document.getElementById("join-btn");
 
 let ROOM_ID = null;
+let pendingRoom = null;
 
 function logMessage(message, type = "info") {
     const now = new Date();
@@ -139,6 +141,19 @@ createBtn.addEventListener("click", () => {
     }
 });
 
+joinBtn.addEventListener("click", () => {
+    const ROOM_CODE = document.getElementById("roomCode").value.trim();
+    if (!ROOM_CODE || ROOM_CODE.length !== 8) {
+        alert("Enter a room code");
+        return;
+    }
+    if (ws && ws.readyState === WebSocket.OPEN) {
+        sendWsMessage({ type: "join-room", roomId: ROOM_CODE });
+    } else {
+        pendingRoom = ROOM_CODE;
+    }
+});
+
 connectBtn.addEventListener("click", () => {
     if (targetId) {
         makeCall();
@@ -254,6 +269,10 @@ function connectWebsocket() {
             name: myName,
         });
         if (ROOM_ID) sendWsMessage({ type: "join-room", roomId: ROOM_ID });
+        if (pendingRoom) {
+            sendWsMessage({ type: "join-room", roomId: pendingRoom });
+            pendingRoom = null;
+        }
     };
 
     ws.onmessage = async (event) => {
