@@ -69,6 +69,7 @@ wss.on("connection", function connection(ws) {
                 rooms.get(roomId).add(ws);
                 ws.roomId = roomId;
                 ws.send(JSON.stringify({ type: "joined", roomId }));
+                broadcastClients(roomId);
                 break;
 
             case "leave-room":
