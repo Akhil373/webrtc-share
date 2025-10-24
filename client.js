@@ -1,6 +1,4 @@
-const wsStatusEl = document.getElementById("ws-status");
 const myIdEl = document.getElementById("my-id");
-const dcStatusEl = document.getElementById("dc-status");
 const selectedPeerEl = document.getElementById("selected-peer");
 const peersListEl = document.getElementById("peers-list");
 const connectBtn = document.getElementById("call-btn");
@@ -174,6 +172,9 @@ let myId = null;
 let targetId = null;
 let peerList = [];
 let fileMetadata = null;
+let ws = null;
+let reconnectTimeout = null;
+let isManuallyClosed = false;
 
 function getUserDetails() {
     const userAgent = navigator.userAgent;
@@ -224,10 +225,6 @@ pc.onconnectionstatechange = () => {
     //     console.log(`Connection state: ${pc.connectionState}`, "info");
 };
 
-let ws = null;
-let reconnectTimeout = null;
-let isManuallyClosed = false;
-
 updateWsStatus(false);
 
 function connectWebsocket() {
@@ -242,7 +239,7 @@ function connectWebsocket() {
         const [osName, browser] = getUserDetails();
         const myName = `${browser}@${osName}`;
         nameEl.textContent = myName;
-        sendMessage({
+        sendWsMessage({
             type: "register",
             name: myName,
         });
@@ -269,7 +266,7 @@ function connectWebsocket() {
             await pc.setRemoteDescription(new RTCSessionDescription(message));
             const answer = await pc.createAnswer();
             await pc.setLocalDescription(answer);
-            sendMessage({
+            sendWsMessage({
                 type: "answer",
                 sdp: answer.sdp,
                 from: myId,
@@ -312,7 +309,7 @@ function closeWebSocket() {
     clearTimeout(reconnectTimeout);
 }
 
-function sendMessage(message) {
+function sendWsMessage(message) {
     if (ws.readyState === WebSocket.OPEN) {
         ws.send(JSON.stringify(message));
         //         console.log(`Sent: ${JSON.stringify(message)}`, "info");
@@ -328,7 +325,7 @@ pc.onicecandidate = (event) => {
             return;
         }
 
-        sendMessage({
+        sendWsMessage({
             type: "ice-candidate",
             candidate: event.candidate,
             from: myId,
@@ -506,7 +503,7 @@ async function makeCall() {
         }
         const offer = await pc.createOffer();
         await pc.setLocalDescription(offer);
-        sendMessage({
+        sendWsMessage({
             type: "offer",
             sdp: offer.sdp,
             from: myId,
@@ -517,5 +514,3 @@ async function makeCall() {
         console.log(`Error creating connection: ${err}`, "error");
     }
 }
-
-// console.log("WebRTC Peer Connection Tester initialized", "info");
