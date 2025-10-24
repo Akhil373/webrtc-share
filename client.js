@@ -10,6 +10,11 @@ const fileShareBtn = document.getElementById("send-file-btn");
 const nameEl = document.getElementById("my-name");
 const fileProg = document.getElementById("file-progress");
 const notify = document.getElementById("notify");
+const createBtn = document.getElementById("create-btn");
+const joinBtn = document.getElementById("join-btn");
+
+let ROOM_ID = null;
+let pendingRoom = null;
 
 function logMessage(message, type = "info") {
     const now = new Date();
@@ -128,6 +133,28 @@ function sendDataChannelMessage() {
     messageInput.value = "";
 }
 
+createBtn.addEventListener("click", () => {
+    ROOM_ID = crypto.randomUUID().substring(0, 8);
+
+    if (ws && ws.readyState === WebSocket.OPEN) {
+        sendWsMessage({ type: "join-room", roomId: ROOM_ID });
+    }
+});
+
+joinBtn.addEventListener("click", () => {
+    const ROOM_CODE = document.getElementById("roomCode").value.trim();
+    if (!ROOM_CODE || ROOM_CODE.length !== 8) {
+        alert("Enter a room code");
+        return;
+    }
+    ROOM_ID = ROOM_CODE;
+    if (ws && ws.readyState === WebSocket.OPEN) {
+        sendWsMessage({ type: "join-room", roomId: ROOM_ID });
+    } else {
+        pendingRoom = ROOM_ID;
+    }
+});
+
 connectBtn.addEventListener("click", () => {
     if (targetId) {
         makeCall();
@@ -234,7 +261,6 @@ function connectWebsocket() {
 
     ws.onopen = () => {
         updateWsStatus(true);
-        //         console.log("WebSocket connected!", "info");
 
         const [osName, browser] = getUserDetails();
         const myName = `${browser}@${osName}`;
@@ -243,25 +269,34 @@ function connectWebsocket() {
             type: "register",
             name: myName,
         });
+        if (ROOM_ID) sendWsMessage({ type: "join-room", roomId: ROOM_ID });
+        if (pendingRoom) {
+            sendWsMessage({ type: "join-room", roomId: pendingRoom });
+            pendingRoom = null;
+        }
     };
 
     ws.onmessage = async (event) => {
         const message = JSON.parse(event.data);
-        //         console.log(`Received: ${JSON.stringify(message)}`, "info");
         if (message.yourID) {
             myId = message.yourID;
             myIdEl.textContent = myId;
-            //             console.log(`Registered with ID: ${myId}`, "info");
             return;
         }
 
-        if (message.type == "clientsList") {
+        if (message.from === myId) return;
+        else if (message.type === "joined") {
+            document.getElementById("join-room").style.display = "none";
+            document.getElementById("main-ui").style.display = "block";
+            notify.textContent = `Joined room-ID: ${message.roomId}`;
+            notify.style.display = "block";
+            setTimeout(() => {
+                notify.style.display = "none";
+            }, 3000);
+        } else if (message.type == "clientsList") {
             peerList = message.content || [];
             updatePeersList(peerList);
-            //             console.log(`Updated peer list with ${peerList.length} peers`, "info");
-        } else if (message.from === myId) {
-            //             console.log("Ignoring messages from myself.");
-            return;
+            console.log(peerList);
         } else if (message.type === "offer") {
             await pc.setRemoteDescription(new RTCSessionDescription(message));
             const answer = await pc.createAnswer();
@@ -271,14 +306,12 @@ function connectWebsocket() {
                 sdp: answer.sdp,
                 from: myId,
                 to: message.from,
+                roomId: message.roomId,
             });
-            //             console.log(`Sent answer to peer ${message.from}`, "info");
         } else if (message.type === "answer") {
             await pc.setRemoteDescription(new RTCSessionDescription(message));
-            //             console.log(`Received and set answer from peer ${message.from}`, "info");
         } else if (message.type === "ice-candidate") {
             await pc.addIceCandidate(new RTCIceCandidate(message.candidate));
-            //             console.log(`Added ICE candidate from peer ${message.from}`, "info");
         }
     };
 
@@ -294,14 +327,13 @@ function connectWebsocket() {
     };
 }
 
+connectWebsocket();
+
 function scheduleReconnect(delay = 2000) {
-    //     console.log(`Reconnecting in ${delay}ms`);
     reconnectTimeout = setTimeout(() => {
         connectWebsocket();
     }, delay);
 }
-
-connectWebsocket();
 
 function closeWebSocket() {
     isManuallyClosed = true;
@@ -312,7 +344,6 @@ function closeWebSocket() {
 function sendWsMessage(message) {
     if (ws.readyState === WebSocket.OPEN) {
         ws.send(JSON.stringify(message));
-        //         console.log(`Sent: ${JSON.stringify(message)}`, "info");
     } else {
         console.log("Error sending message to WebSocket server", "error");
     }
@@ -330,6 +361,7 @@ pc.onicecandidate = (event) => {
             candidate: event.candidate,
             from: myId,
             to: targetId,
+            roomId: ROOM_ID,
         });
         //         console.log(`Sent ICE candidate to peer ${targetId}`, "info");
     }
@@ -508,8 +540,8 @@ async function makeCall() {
             sdp: offer.sdp,
             from: myId,
             to: targetId,
+            roomId: ROOM_ID,
         });
-        //         console.log(`Sent offer to peer ${targetId}`, "info");
     } catch (err) {
         console.log(`Error creating connection: ${err}`, "error");
     }

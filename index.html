@@ -274,19 +274,92 @@
     </style>
   </head>
 
-  <body class="bg-black min-h-screen p-4 md:p-6 lg:p-8">
-    <div class="container max-w-7xl mx-auto flex flex-col gap-4 md:gap-6">
+  <body class="bg-[#282828] min-h-screen p-4 md:p-6 lg:p-8">
+    <div
+      id="notify"
+      class="hidden text-[#83a598] absolute bg-[#282828] animate-bounce-2 top-5 right-5 border-2 border-solid border-[#cc241d] p-2"
+    >
+      <span class="text-[#cc241d]">● </span>Starting up... This may take a few
+      seconds on first launch.
+    </div>
+
+    <div
+      id="join-room"
+      class="min-h-screen text-[#ebdbb2] flex items-center justify-center p-6"
+    >
       <div
-        id="notify"
-        class="hidden text-[#83a598] absolute bg-black animate-bounce-2 top-5 right-5 border-2 border-solid border-red-500 p-2"
+        class="w-full max-w-md rounded-xl shadow-2xl bg-[#3c3836] border border-[#504945] p-8 space-y-6"
       >
-        <span class="text-[#cc241d]">● </span>Starting up... This may take a few
-        seconds on first launch.
+        <div class="text-center">
+          <h1 class="text-2xl font-bold text-[#fabd2f]">Start a secure call</h1>
+          <p class="text-sm text-[#a89984] mt-1">
+            One click and you’ll get a private room link to share.
+          </p>
+        </div>
+
+        <button
+          id="create-btn"
+          class="w-full cursor-pointer flex items-center justify-center gap-3 bg-[#fe8019] hover:bg-[#fd9644] text-[#282828] font-semibold py-3 px-4 rounded-lg transition transform hover:scale-[1.02] focus:outline-none focus:ring-4 focus:ring-[#fe8019]/50"
+        >
+          <svg
+            class="w-6 h-6"
+            fill="none"
+            stroke="currentColor"
+            stroke-width="2"
+            viewBox="0 0 24 24"
+          >
+            <path
+              stroke-linecap="round"
+              stroke-linejoin="round"
+              d="M12 4v16m8-8H4"
+            />
+          </svg>
+          Create room
+        </button>
+
+        <div
+          class="flex items-center text-[#7c6f64] text-xs uppercase tracking-wider"
+        >
+          <span class="h-px bg-[#504945] flex-1"></span>
+          <span class="px-3">or</span>
+          <span class="h-px bg-[#504945] flex-1"></span>
+        </div>
+
+        <div class="space-y-3">
+          <label for="roomCode" class="block text-sm font-medium text-[#b8bb26]"
+            >Already have a code?</label
+          >
+          <div class="flex gap-3">
+            <input
+              id="roomCode"
+              type="text"
+              placeholder="a8f3k2z1"
+              maxlength="10"
+              class="flex-1 bg-[#282828] border border-[#504945] rounded-md px-4 py-2 text-[#ebdbb2] placeholder-[#7c6f64] focus:outline-none focus:ring-2 focus:ring-[#b8bb26]"
+            />
+            <button
+              id="join-btn"
+              class="bg-[#458588] cursor-pointer hover:bg-[#83a598] text-[#282828] font-semibold px-5 py-2 rounded-md transition"
+            >
+              Join
+            </button>
+          </div>
+        </div>
+
+        <p class="text-xs text-[#a89984] text-center">
+          Rooms expire 30 min after everyone leaves.
+        </p>
       </div>
+    </div>
+    <!-- main-content only, gruvbox-ified -->
+    <div
+      id="main-ui"
+      class="container hidden max-w-7xl mx-auto flex flex-col gap-4 md:gap-6"
+    >
       <header class="text-center py-4 md:py-6">
         <h1
           class="text-3xl md:text-4xl lg:text-5xl font-bold mb-2 md:mb-3"
-          style="color: #98971a; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3)"
+          style="color: #b8bb26; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.6)"
         >
           peer-to-peer connection.
         </h1>
@@ -301,7 +374,8 @@
       <!-- Status Bar -->
       <div
         id="status-bar"
-        class="status-bar md:hidden grid grid-cols-3 gap-3 text-white p-3 rounded-lg shadow-lg text-xs"
+        class="status-bar md:hidden grid grid-cols-3 gap-3 text-[#ebdbb2] p-3 rounded-lg shadow-lg text-xs"
+        style="background: #3c3836; border: 1px solid #504945"
       >
         <div class="status-item text-center">
           <div class="status-label opacity-70">WS</div>
@@ -321,8 +395,8 @@
         </div>
       </div>
       <div
-        class="status-bar hidden md:flex flex-wrap justify-between gap-3 bg-white bg-opacity-10 text-white p-4 rounded-lg shadow-lg"
-        id="status-bar"
+        class="status-bar hidden md:flex flex-wrap justify-between gap-3 text-[#ebdbb2] p-4 rounded-lg shadow-lg"
+        style="background: #3c3836; border: 1px solid #504945"
       >
         <div class="status-item flex flex-col items-center min-w-[120px]">
           <div class="status-label text-sm opacity-80 mb-1">
@@ -331,7 +405,7 @@
           <div
             id="ws-status"
             class="status-value disconnected font-bold text-base"
-            style="color: #cc214d"
+            style="color: #cc241d"
           >
             Disconnected
           </div>
@@ -361,7 +435,7 @@
           <div
             id="dc-status"
             class="status-value disconnected font-bold text-base"
-            style="color: #cc214d"
+            style="color: #cc241d"
           >
             Closed
           </div>
@@ -384,11 +458,9 @@
         <div
           class="panel rounded-lg p-4 md:p-6 shadow-lg flex-1 lg:min-w-[350px]"
           id="side-panel"
-          style="background: #1d2021; color: white"
+          style="background: #1d2021; color: #ebdbb2; border: 1px solid #504945"
         >
-          <h2
-            class="text-xl md:text-2xl mb-4 pb-3 border-b border-white border-opacity-20"
-          >
+          <h2 class="text-xl md:text-2xl mb-4 pb-3 border-b border-[#504945]">
             Available Peers
           </h2>
 
@@ -400,8 +472,8 @@
           <div class="action-buttons flex gap-2 md:gap-3 mt-4 md:mt-6">
             <button
               id="call-btn"
-              class="btn cursor-pointer btn-success flex-1 px-4 py-2.5 md:px-5 md:py-3 rounded-lg font-bold transition-all disabled:bg-gray-600 disabled:cursor-not-allowed text-sm md:text-base"
-              style="background: #4caf50; color: white"
+              class="btn cursor-pointer btn-success flex-1 px-4 py-2.5 md:px-5 md:py-3 rounded-lg font-bold transition-all disabled:bg-[#7c6f64] disabled:cursor-not-allowed text-sm md:text-base"
+              style="background: #689d6a; color: #282828"
               disabled
             >
               Connect
@@ -430,7 +502,7 @@
               type="button"
               class="btn cursor-pointer btn-primary px-4 py-2.5 rounded-lg font-bold transition-all text-sm md:text-base"
               id="send-file-btn"
-              style="background: #2196f3; color: white"
+              style="background: #458588; color: #282828"
             >
               send
             </button>
@@ -438,30 +510,26 @@
 
           <div
             id="file-progress"
-            class="min-h-[1.4em] mt-2 text-xs md:text-sm text-gray-400 px-1"
+            class="min-h-[1.4em] mt-2 text-xs md:text-sm text-[#a89984] px-1"
           ></div>
         </div>
 
         <!-- Message Panel -->
         <div
           class="panel rounded-lg p-4 md:p-6 shadow-lg flex-1"
-          style="background: #1d2021; color: white"
+          style="background: #1d2021; color: #ebdbb2; border: 1px solid #504945"
         >
-          <h2
-            class="text-xl md:text-2xl mb-4 pb-3 border-b border-white border-opacity-20"
-          >
+          <h2 class="text-xl md:text-2xl mb-4 pb-3 border-b border-[#504945]">
             connection log
           </h2>
 
           <div
             id="message-log"
-            class="message-log bg-black bg-opacity-20 rounded-lg p-3 md:p-4 h-[250px] md:h-[300px] overflow-y-auto font-mono text-xs md:text-sm"
+            class="message-log bg-[#1d2021] rounded-lg p-3 md:p-4 h-[250px] md:h-[300px] overflow-y-auto font-mono text-xs md:text-sm"
           >
-            <div
-              class="log-entry mb-2 pb-2 border-b border-white border-opacity-10"
-            >
-              <span class="log-time text-gray-400 text-xs">[00:00:00]</span>
-              <span class="log-info" style="color: #4caf50"
+            <div class="log-entry mb-2 pb-2 border-b border-[#504945]">
+              <span class="log-time text-[#a89984] text-xs">[00:00:00]</span>
+              <span class="log-info" style="color: #689d6a"
                 >Application Started.</span
               >
             </div>
@@ -469,19 +537,19 @@
 
           <div
             class="message-input flex gap-3 md:gap-4 mt-4"
-            style="background: #282828"
+            style="background: #3c3836"
           >
             <input
               type="text"
               id="message-input"
               placeholder="Type a message to send..."
-              class="flex-1 px-3 bg-[#282828] py-2 md:px-4 md:py-2.5 rounded-lg border-none text-sm md:text-base"
+              class="flex-1 px-3 bg-[#3c3836] py-2 md:px-4 md:py-2.5 rounded-lg border-none text-sm md:text-base placeholder-[#7c6f64] focus:outline-none focus:ring-2 focus:ring-[#b8bb26] text-[#ebdbb2]"
               disabled
             />
             <button
               id="send-btn"
               class="px-4 cursor-pointer py-2 md:px-5 md:py-2.5 rounded-lg font-bold text-sm md:text-base"
-              style="background: #2196f3; color: white"
+              style="background: #458588; color: #282828"
               disabled
             >
               send
@@ -490,7 +558,6 @@
         </div>
       </div>
     </div>
-
     <script src="client.js" type="module"></script>
     <script>
       if ("serviceWorker" in navigator) {
