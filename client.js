@@ -12,9 +12,12 @@ const fileProg = document.getElementById("file-progress");
 const notify = document.getElementById("notify");
 const createBtn = document.getElementById("create-btn");
 const joinBtn = document.getElementById("join-btn");
+const roomInput = document.getElementById("roomCode");
 
 let ROOM_ID = null;
 let pendingRoom = null;
+
+const urlRoom = location.hash.slice(1);
 
 function logMessage(message, type = "info") {
     const now = new Date();
@@ -135,6 +138,7 @@ function sendDataChannelMessage() {
 
 createBtn.addEventListener("click", () => {
     ROOM_ID = crypto.randomUUID().substring(0, 8);
+    location.hash = ROOM_ID;
 
     if (ws && ws.readyState === WebSocket.OPEN) {
         sendWsMessage({ type: "join-room", roomId: ROOM_ID });
@@ -142,12 +146,14 @@ createBtn.addEventListener("click", () => {
 });
 
 joinBtn.addEventListener("click", () => {
-    const ROOM_CODE = document.getElementById("roomCode").value.trim();
+    console.log("btn clicked");
+    const ROOM_CODE = roomInput.value.trim();
     if (!ROOM_CODE || ROOM_CODE.length !== 8) {
         alert("Enter a room code");
         return;
     }
     ROOM_ID = ROOM_CODE;
+    location.hash = ROOM_ID;
     if (ws && ws.readyState === WebSocket.OPEN) {
         sendWsMessage({ type: "join-room", roomId: ROOM_ID });
     } else {
@@ -182,16 +188,28 @@ fileInput.addEventListener("change", (e) => {
 fileShareBtn.addEventListener("click", sendFiles);
 
 // const config = { iceServers: [{ urls: "stun:stun.l.google.com:19302" }] };
+
 const config = {
     iceServers: [
-        { urls: "stun:stun.l.google.com:19302" },
         {
-            urls: "turn:openrelay.metered.ca:443",
-            username: "openrelayproject",
-            credential: "openrelayproject",
+            urls: "stun:stun.relay.metered.ca:80",
+        },
+        {
+            urls: "stun:stun.l.google.com:19302",
+        },
+        {
+            urls: "turn:asia.relay.metered.ca:80",
+            username: "6d55c503e6d8ff2c6dc1a46e",
+            credential: "RXwdhSgX6CHTW4hp",
+        },
+        {
+            urls: "turns:asia.relay.metered.ca:443?transport=tcp",
+            username: "6d55c503e6d8ff2c6dc1a46e",
+            credential: "RXwdhSgX6CHTW4hp",
         },
     ],
-    iceCandidatePoolSize: 2,
+    iceCandidatePoolSize: 10,
+    iceTransportPolicy: "all",
 };
 const pc = new RTCPeerConnection(config);
 let dc;
@@ -350,9 +368,9 @@ function sendWsMessage(message) {
 }
 
 pc.onicecandidate = (event) => {
+    console.log("cadidate checking: ", event.candidate);
     if (event.candidate) {
         if (event.candidate.candidate.includes(".local")) {
-            //             console.log("Skipping .local candidate", "info");
             return;
         }
 
@@ -545,4 +563,9 @@ async function makeCall() {
     } catch (err) {
         console.log(`Error creating connection: ${err}`, "error");
     }
+}
+
+if (urlRoom) {
+    roomInput.value = urlRoom;
+    joinBtn.click();
 }
