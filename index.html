@@ -6,9 +6,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta name="theme-color" content="#282828" />
     <title>WebRTC Peer2Peer Connection</title>
-    <!-- <script src="https://cdn.tailwindcss.com"></script> -->
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
-    <!-- <link rel="stylesheet" href="style.css" /> -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
     <link
       rel="icon"
       type="image/png"
@@ -283,7 +282,39 @@
       <span class="text-[#cc241d]">● </span>Starting up... This may take a few
       seconds on first launch.
     </div>
-    <div className="absolute top-5 left-5">share room URL</div>
+    <div
+      id="share-modal"
+      class="hidden fixed inset-0 bg-black/70 flex items-center justify-center z-50 p-4"
+    >
+      <div
+        class="bg-[#282828] border border-[#3c3836] rounded-lg p-6 w-full max-w-md mx-4"
+      >
+        <div class="flex justify-center my-4">
+          <div
+            id="qr-code"
+            class="bg-[#3c3836] border border-[#504945] w-48 h-48 flex items-center justify-center"
+          ></div>
+        </div>
+
+        <div class="mt-4">
+          <label class="block text-[#a89984] text-sm mb-1">Room ID</label>
+          <div
+            id="room-id"
+            class="text-[#ebdbb2] bg-[#3c3836] p-2 rounded font-mono text-center break-all text-sm"
+          ></div>
+        </div>
+
+        <!-- Copy URL Button -->
+        <div class="mt-5">
+          <button
+            id="copy-url-btn"
+            class="w-full bg-[#3c3836] hover:bg-[#504945] text-[#83a598] py-2 rounded text-sm font-medium transition focus:outline-none focus:ring-1 focus:ring-[#83a598]"
+          >
+            Copy Room URL
+          </button>
+        </div>
+      </div>
+    </div>
 
     <div
       id="join-room"
@@ -358,6 +389,13 @@
       id="main-ui"
       class="container hidden max-w-7xl mx-auto flex flex-col gap-4 md:gap-6"
     >
+      <button
+        id="share-btn"
+        class="absolute top-5 right-5 bg-[#3c3836] hover:bg-[#504945] text-yellow-500 px-3 py-1.5 rounded text-sm font-medium transition shadow-[0_2px_4px_rgba(0,0,0,0.2)] focus:outline-none focus:ring-1 focus:ring-[#83a598]"
+      >
+        🔗 share room
+      </button>
+
       <header class="text-center py-4 md:py-6">
         <h1
           class="text-3xl md:text-4xl lg:text-5xl font-bold mb-2 md:mb-3"

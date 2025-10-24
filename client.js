@@ -13,6 +13,9 @@ const notify = document.getElementById("notify");
 const createBtn = document.getElementById("create-btn");
 const joinBtn = document.getElementById("join-btn");
 const roomInput = document.getElementById("roomCode");
+const shareBtn = document.getElementById("share-btn");
+const shareModal = document.getElementById("share-modal");
+const copyUrlBtn = document.getElementById("copy-url-btn");
 
 let ROOM_ID = null;
 let pendingRoom = null;
@@ -94,9 +97,9 @@ function selectPeer(peer) {
 
 function updateWsStatus(connected) {
     if (!connected) {
-        notify.style.display = "block";
+        notify.classList.remove("hidden");
     } else {
-        notify.style.display = "none";
+        notify.classList.add("hidden");
     }
 
     const txt = connected ? "Connected" : "Disconnected";
@@ -158,6 +161,54 @@ joinBtn.addEventListener("click", () => {
         sendWsMessage({ type: "join-room", roomId: ROOM_ID });
     } else {
         pendingRoom = ROOM_ID;
+    }
+});
+
+shareBtn.addEventListener("click", () => {
+    shareModal.classList.remove("hidden");
+
+    const qrContainer = document.getElementById("qr-code");
+    qrContainer.innerHTML = "";
+
+    const roomURL = window.location.href;
+    new QRCode(qrContainer, {
+        text: roomURL,
+        width: 192,
+        height: 192,
+        colorDark: "#ebdbb2",
+        colorLight: "#3c3836",
+    });
+
+    document.getElementById("room-id").textContent = ROOM_ID;
+});
+
+shareModal.addEventListener("click", (e) => {
+    if (e.target === shareModal) shareModal.classList.add("hidden");
+});
+
+copyUrlBtn.addEventListener("click", () => {
+    navigator.clipboard
+        .writeText(window.location.href)
+        .then(() => {
+            copyUrlBtn.textContent = "Copied!";
+            copyUrlBtn.classList.remove("bg-[#3c3836]");
+            copyUrlBtn.classList.add("bg-[#98971a]");
+
+            setTimeout(() => {
+                copyUrlBtn.textContent = "Copy Room URL";
+                copyUrlBtn.classList.remove("bg-[#98971a]");
+                copyUrlBtn.classList.add("bg-[#3c3836]");
+            }, 2000);
+        })
+        .catch((err) => {
+            console.error("Failed to copy:", err);
+            alert("Failed to copy URL");
+        });
+});
+
+document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" && !shareModal.classList.contains("hidden")) {
+        shareModal.classList.add("hidden");
     }
 });
 
@@ -304,12 +355,12 @@ function connectWebsocket() {
 
         if (message.from === myId) return;
         else if (message.type === "joined") {
-            document.getElementById("join-room").style.display = "none";
-            document.getElementById("main-ui").style.display = "block";
+            document.getElementById("join-room").classList.add("hidden");
+            document.getElementById("main-ui").classList.remove("hidden");
             notify.textContent = `Joined room-ID: ${message.roomId}`;
-            notify.style.display = "block";
+            notify.classList.remove("hidden");
             setTimeout(() => {
-                notify.style.display = "none";
+                notify.classList.add("hidden");
             }, 3000);
         } else if (message.type == "clientsList") {
             peerList = message.content || [];
@@ -368,7 +419,7 @@ function sendWsMessage(message) {
 }
 
 pc.onicecandidate = (event) => {
-    console.log("cadidate checking: ", event.candidate);
+    // console.log("cadidate checking: ", event.candidate);
     if (event.candidate) {
         // if (event.candidate.candidate.includes(".local")) {
         //     return;
@@ -496,9 +547,9 @@ fileInput.addEventListener("change", () => {
     const file = fileInput.files[0];
     if (file.size > 1 * 1024 * 1024 * 1024) {
         notify.textContent = `Caution: Sending large files will use significant memory on the receiver's device.`;
-        notify.style.display = "block";
+        notify.classList.remove("hidden");
         setTimeout(() => {
-            notify.style.display = "none";
+            notify.classList.add("hidden");
         }, 10_000);
     }
 });
