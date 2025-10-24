@@ -275,14 +275,15 @@
     </style>
   </head>
 
-  <body class="bg-[#282828] min-h-screen p-4 md:p-6 lg:p-8">
+  <body class="bg-[#282828] text-white min-h-screen p-4 md:p-6 lg:p-8">
     <div
       id="notify"
-      class="hidden text-[#83a598] absolute bg-[#282828] animate-bounce-2 top-5 right-5 border-2 border-solid border-[#cc241d] p-2"
+      class="hidden text-[#83a598] absolute bg-[#282828] animate-bounce-2 top-5 left-5 border-2 border-solid border-[#cc241d] p-2"
     >
       <span class="text-[#cc241d]">● </span>Starting up... This may take a few
       seconds on first launch.
     </div>
+    <div className="absolute top-5 left-5">share room URL</div>
 
     <div
       id="join-room"
@@ -335,7 +336,7 @@
               id="roomCode"
               type="text"
               placeholder="a8f3k2z1"
-              maxlength="10"
+              maxlength="8"
               class="flex-1 bg-[#282828] border border-[#504945] rounded-md px-4 py-2 text-[#ebdbb2] placeholder-[#7c6f64] focus:outline-none focus:ring-2 focus:ring-[#b8bb26]"
             />
             <button
@@ -352,7 +353,7 @@
         </p>
       </div>
     </div>
-    <!-- main-content only, gruvbox-ified -->
+
     <div
       id="main-ui"
       class="container hidden max-w-7xl mx-auto flex flex-col gap-4 md:gap-6"
@@ -454,7 +455,7 @@
       </div>
 
       <!-- Main Content -->
-      <div class="main-content flex flex-col lg:flex-row gap-4 md:gap-6">
+      <div class="main-content m-3 flex flex-col lg:flex-row gap-4 md:gap-6">
         <!-- Side Panel -->
         <div
           class="panel rounded-lg p-4 md:p-6 shadow-lg flex-1 lg:min-w-[350px]"

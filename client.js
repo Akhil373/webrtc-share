@@ -370,9 +370,9 @@ function sendWsMessage(message) {
 pc.onicecandidate = (event) => {
     console.log("cadidate checking: ", event.candidate);
     if (event.candidate) {
-        if (event.candidate.candidate.includes(".local")) {
-            return;
-        }
+        // if (event.candidate.candidate.includes(".local")) {
+        //     return;
+        // }
 
         sendWsMessage({
             type: "ice-candidate",
