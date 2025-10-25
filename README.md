@@ -1,23 +1,29 @@
-# webrtc p2p share
+# webrtc-p2p-share  
+browser-to-browser files & chat – no installs, no uploads, no deps.
 
-A simple peer-to-peer file and message sharing app using WebRTC. Share stuff directly between devices without uploading to any server.
+## why  
+I wanted to understand WebRTC from the metal up. Also test limits for max. transfer speeds (still working).  
+No wrappers, no black-box libraries: just the raw APIs, a WebSocket handshake, and as little code as possible.  
+Built from scratch with vanilla JS + WebRTC + one tiny WS router.  
+No frameworks, no build step, no tracking.
 
-## What it does
+## what  
+- instant text chat  
+- file share 
+- share a hash-link, done (`#a8f3k2z1`)  
+- works on wifi, mobile hotspot, whatever NAT you’re behind (well, for the most part)
+- even better if you plug in your own TURN server
 
-- Send messages between devices in real-time
-- Transfer files directly (P2P)
-- No file size limits (well, depends on your connection)
-- Works across different networks
+## stack  
+- client: plain ES modules, PWA-ready
+- server: 80-line WS room router (Node)  
+- network: dual-stack STUN + TURN (IPv4 / IPv6 / 443-TLS)
 
-## Tech Stack
+## run  
+```bash
+git clone https://github.com/Akhil373/webrtc-share.git
+cd webrtc-share && pnpm i && pnpm start
+```
 
-- **WebRTC** - for peer-to-peer connections
-- **WebSockets** - signaling server (connecting peers)
-- **Node.js** - backend
-
-## How it works
-
-1. **Signaling Server** - WebSocket server helps peers discover each other and exchange SDP offers/answers
-2. **ICE Candidates** - STUN servers help peers find their public IPs and negotiate NAT traversal
-3. **Data Channels** - Once WebRTC connection establishes, everything flows P2P through RTCDataChannel
-4. **No relays** - Direct peer-to-peer connection (STUN only, no TURN... yet)
+## licence  
+MIT – just use it
