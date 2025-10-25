@@ -323,7 +323,9 @@
         class="w-full max-w-md rounded-xl shadow-2xl bg-[#3c3836] border border-[#504945] p-8 space-y-6"
       >
         <div class="text-center">
-          <h1 class="text-2xl font-bold text-[#fabd2f]">Start a secure call</h1>
+          <h1 class="text-2xl font-bold text-[#fabd2f]">
+            Start a secure file share
+          </h1>
           <p class="text-sm text-[#a89984] mt-1">
             One click and you’ll get a private room link to share.
           </p>
@@ -390,7 +392,7 @@
     >
       <button
         id="share-btn"
-        class="absolute top-5 right-5 bg-[#3c3836] hover:bg-[#504945] text-yellow-500 px-3 py-1.5 rounded text-sm font-medium transition shadow-[0_2px_4px_rgba(0,0,0,0.2)] focus:outline-none focus:ring-1 focus:ring-[#83a598]"
+        class="absolute bottom-5 right-5 bg-[#3c3836] hover:bg-[#504945] text-yellow-500 p-3 rounded text-sm font-medium transition shadow-[0_2px_4px_rgba(0,0,0,0.2)] focus:outline-none focus:ring-1 focus:ring-[#83a598]"
       >
         🔗 share room
       </button>
@@ -516,6 +518,13 @@
               disabled
             >
               Connect
+            </button>
+            <button
+              id="leave-btn"
+              class="btn cursor-pointer btn-success flex-1 px-4 py-2.5 md:px-5 md:py-3 rounded-lg font-bold transition-all text-sm md:text-base"
+              style="background: #fb4934; color: #282828"
+            >
+              Leave room
             </button>
           </div>
 
