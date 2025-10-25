@@ -386,14 +386,15 @@ function connectWebsocket() {
         else if (message.type === "joined") {
             document.getElementById("join-room").classList.add("hidden");
             document.getElementById("main-ui").classList.remove("hidden");
+        } else if (message.type == "clientsList") {
+            peerList = message.content || [];
+            updatePeersList(peerList);
             if (peerList.find((p) => p.id === myId) && peerList.length === 1) {
                 notify.textContent = `📌 Share this room to other device! ⤵️`;
                 notify.classList.remove("hidden");
             }
-        } else if (message.type == "clientsList") {
-            peerList = message.content || [];
-            updatePeersList(peerList);
-            console.log(peerList);
+
+            // console.log(peerList);
         } else if (message.type === "offer") {
             await pc.setRemoteDescription(new RTCSessionDescription(message));
             const answer = await pc.createAnswer();
