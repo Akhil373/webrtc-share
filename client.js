@@ -506,6 +506,7 @@ function attachDcHandler(channel) {
         const blob = new Blob([pendingBuffer], {
             type: receivedfileMetadata.fileType,
         });
+        pendingBuffer = null;
         if (fileProg) {
             fileProg.textContent = "File received!";
         }
@@ -531,7 +532,6 @@ function attachDcHandler(channel) {
         window.URL.revokeObjectURL(url);
 
         receivedfileMetadata = null;
-        pendingBuffer = [];
         receivedBytes = 0;
     }
 }
