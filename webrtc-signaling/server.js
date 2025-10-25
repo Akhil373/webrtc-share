@@ -19,7 +19,7 @@ const broadcastClients = (roomId) => {
     if (!room) return;
 
     const list = Array.from(room)
-        .filter((s) => s.name)
+        .filter((s) => s.name || s.readyState === 1)
         .map((s) => ({ id: s.id, name: s.name }));
 
     const msg = JSON.stringify({ type: "clientsList", content: list });
@@ -86,7 +86,8 @@ wss.on("connection", function connection(ws) {
     });
     ws.on("error", console.error);
     ws.on("close", () => {
-        broadcastClients(ws.roomId);
+        const tempRoomId = ws.roomId;
         leaveRoom(ws);
+        broadcastClients(tempRoomId);
     });
 });

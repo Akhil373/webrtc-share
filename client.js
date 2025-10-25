@@ -556,8 +556,56 @@ fileInput.addEventListener("change", () => {
 
 async function sendFiles() {
     const file = fileInput.files[0];
+    if (!file) {
+        logMessage("Please select a file!");
+        return;
+    }
 
-    const chunkSize = 64 * 1024;
+    try {
+        const worker = new Worker("worker.js");
+
+        worker.onmessage = (e) => {
+            if (e.data.type === "progress") {
+                const progress = (e.data.offset / e.data.total) * 100;
+                fileProg.textContent =
+                    e.data.offset === e.data.total
+                        ? "File Sent!"
+                        : `Progress: ${progress.toFixed(1)}%`;
+            } else if (e.data.type === "complete") {
+                logMessage(`Sent file: ${e.data.fileName}`);
+                worker.terminate();
+            }
+        };
+
+        worker.postMessage(
+            {
+                dc,
+                file,
+                myId,
+                targetId,
+                CHUNK_SIZE: 64 * 1024,
+                HIGH_WATER_MARK: 1024 * 1024,
+                LOW_WATER_MARK: 256 * 1024,
+            },
+            [dc],
+        );
+    } catch (err) {
+        console.log("Worker not supported, using main thread");
+        console.log(err);
+        await sendFilesMainThread(file);
+    }
+}
+
+async function sendFilesMainThread() {
+    const file = fileInput.files[0];
+    if (!file) {
+        logMessage("Please select a file!");
+        return;
+    }
+    const CHUNK_SIZE = 64 * 1024;
+    const HIGH_WATER_MARK = 1024 * 1024;
+    const LOW_WATER_MARK = 256 * 1024;
+    dc.bufferedAmountLowThreshold = LOW_WATER_MARK;
     let offset = 0;
 
     if (!file) {
@@ -577,13 +625,21 @@ async function sendFiles() {
     };
     dc.send(JSON.stringify(metadata));
 
-    let progress = 0;
     while (offset < file.size) {
-        const end = Math.min(offset + chunkSize, file.size);
+        const end = Math.min(offset + CHUNK_SIZE, file.size);
         const chunk = file.slice(offset, end);
         const arrayBuf = await chunk.arrayBuffer();
-        dc.send(arrayBuf);
 
+        if (dc.bufferedAmount > HIGH_WATER_MARK) {
+            await new Promise((resolve, reject) => {
+                const onLow = () => resolve();
+                const onClose = () => reject(new Error("DataChannel closed"));
+                dc.addEventListener("bufferedamountlow", onLow, { once: true });
+                dc.addEventListener("close", onClose, { once: true });
+            });
+        }
+
+        dc.send(arrayBuf);
         offset = end;
 
         const progress = (offset / file.size) * 100;
