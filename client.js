@@ -12,7 +12,6 @@ const fileProg = document.getElementById("file-progress");
 const notify = document.getElementById("notify");
 const createBtn = document.getElementById("create-btn");
 const joinBtn = document.getElementById("join-btn");
-const leaveBtn = document.getElementById("leave-btn");
 const roomInput = document.getElementById("roomCode");
 const shareBtn = document.getElementById("share-btn");
 const shareModal = document.getElementById("share-modal");
@@ -45,7 +44,7 @@ function updatePeersList(peers) {
         peersListEl.classList.add("empty-state");
         const message = document.createElement("div");
         message.className = "message";
-        message.textContent = "Waiting for devices to join...";
+        message.textContent = "Searching for nearby devices...";
         peersListEl.appendChild(message);
         return;
     }
@@ -167,7 +166,6 @@ joinBtn.addEventListener("click", () => {
 
 shareBtn.addEventListener("click", () => {
     shareModal.classList.remove("hidden");
-    notify.classList.add("hidden");
 
     const qrContainer = document.getElementById("qr-code");
     qrContainer.innerHTML = "";
@@ -239,12 +237,6 @@ fileInput.addEventListener("change", (e) => {
 });
 
 fileShareBtn.addEventListener("click", sendFiles);
-
-leaveBtn.addEventListener("click", () => {
-    notify.classList.add("hidden");
-    sendWsMessage({ type: "leave-room", roomId: ROOM_ID });
-    handleLeftRoom();
-});
 
 // const config = { iceServers: [{ urls: "stun:stun.l.google.com:19302" }] };
 
@@ -356,20 +348,6 @@ pc.onconnectionstatechange = () => {
 
 updateWsStatus(false);
 
-function handleLeftRoom() {
-    ROOM_ID = null;
-    targetId = null;
-    peerList = [];
-    updatePeersList([]);
-
-    if (pc) pc.close();
-    dc = null;
-
-    location.hash = "";
-    document.getElementById("join-room").classList.remove("hidden");
-    document.getElementById("main-ui").classList.add("hidden");
-}
-
 function connectWebsocket() {
     if (isManuallyClosed) return;
 
@@ -407,11 +385,11 @@ function connectWebsocket() {
         else if (message.type === "joined") {
             document.getElementById("join-room").classList.add("hidden");
             document.getElementById("main-ui").classList.remove("hidden");
-            notify.textContent = `📌 Share this room! Click “Share Room” (bottom right) to send the link to your device ⤵️`;
+            notify.textContent = `Joined room-ID: ${message.roomId}`;
             notify.classList.remove("hidden");
-            // setTimeout(() => {
-            //     notify.classList.add("hidden");
-            // }, 6000);
+            setTimeout(() => {
+                notify.classList.add("hidden");
+            }, 3000);
         } else if (message.type == "clientsList") {
             peerList = message.content || [];
             updatePeersList(peerList);
@@ -431,8 +409,6 @@ function connectWebsocket() {
             await pc.setRemoteDescription(new RTCSessionDescription(message));
         } else if (message.type === "ice-candidate") {
             await pc.addIceCandidate(new RTCIceCandidate(message.candidate));
-        } else if (message.type === "left") {
-            handleLeftRoom();
         }
     };
 
