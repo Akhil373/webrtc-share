@@ -165,6 +165,7 @@ joinBtn.addEventListener("click", () => {
 });
 
 shareBtn.addEventListener("click", () => {
+    notify.classList.add("hidden");
     shareModal.classList.remove("hidden");
 
     const qrContainer = document.getElementById("qr-code");
@@ -385,11 +386,10 @@ function connectWebsocket() {
         else if (message.type === "joined") {
             document.getElementById("join-room").classList.add("hidden");
             document.getElementById("main-ui").classList.remove("hidden");
-            notify.textContent = `Joined room-ID: ${message.roomId}`;
-            notify.classList.remove("hidden");
-            setTimeout(() => {
-                notify.classList.add("hidden");
-            }, 3000);
+            if (peerList.find((p) => p.id === myId) && peerList.length === 1) {
+                notify.textContent = `📌 Share this room to other device! ⤵️`;
+                notify.classList.remove("hidden");
+            }
         } else if (message.type == "clientsList") {
             peerList = message.content || [];
             updatePeersList(peerList);
