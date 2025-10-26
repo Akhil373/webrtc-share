@@ -465,6 +465,23 @@ pc.onicecandidate = (event) => {
     }
 };
 
+let dcBeat = null;
+const DC_BEAT_MS = 10_000;
+const DC_BEAT_MSG = JSON.stringify({ type: "dc-ping" });
+
+function startDcBeat() {
+    stopDcBeat();
+    if (!dc || dc.readyState !== "open") return;
+    dcBeat = setInterval(() => {
+        if (dc.readyState === "open") dc.send(DC_BEAT_MSG);
+    }, DC_BEAT_MS);
+}
+
+function stopDcBeat() {
+    clearInterval(dcBeat);
+    dcBeat = null;
+}
+
 function attachDcHandler(channel) {
     let pendingBuffer = [];
     let receivedfileMetadata = null;
@@ -472,6 +489,7 @@ function attachDcHandler(channel) {
 
     channel.onopen = () => {
         updateDcStatus(true);
+        startDcBeat();
         //         console.log("Data Channel is active");
     };
 
@@ -483,6 +501,7 @@ function attachDcHandler(channel) {
                 const msg = JSON.parse(data);
 
                 if (msg.type === "fileMeta") {
+                    requestLock();
                     receivedfileMetadata = {
                         fileName: msg.fileName,
                         fileType: msg.fileType,
@@ -529,6 +548,7 @@ function attachDcHandler(channel) {
     channel.onerror = (err) => {
         updateDcStatus(false);
         console.log("Data channel error: " + err, "warning");
+        stopDcBeat();
     };
 
     function processReceivedFile() {
@@ -562,7 +582,13 @@ function attachDcHandler(channel) {
 
         receivedfileMetadata = null;
         receivedBytes = 0;
+        releaseLock();
     }
+
+    channel.onclose = () => {
+        updateDcStatus(false);
+        stopDcBeat();
+    };
 }
 
 pc.ondatachannel = (event) => {
@@ -583,12 +609,37 @@ fileInput.addEventListener("change", () => {
     }
 });
 
+let wakeLock = null;
+
+async function requestLock() {
+    if (!("wakeLock" in navigator)) {
+        console.warn("Wake lock is not supported.");
+        return;
+    }
+    try {
+        wakeLock = await navigator.wakeLock.request("screen");
+        console.log("Screen kept awake");
+        wakeLock.addEventListener("release", () => console.log("wakeLock lost."));
+    } catch (err) {
+        console.error("wake lock failed: ", err);
+    }
+}
+
+function releaseLock() {
+    wakeLock?.release().then(() => (wakeLock = null));
+}
+
+document.addEventListener("visibilitychange", () => {
+    if (!wakeLock && document.visibilityState === "visible") requestLock();
+});
+
 async function sendFiles() {
     const file = fileInput.files[0];
     if (!file) {
         logMessage("Please select a file!");
         return;
     }
+    await requestLock();
     const CHUNK_SIZE = 64 * 1024;
     const HIGH_WATER_MARK = 1024 * 1024;
     const LOW_WATER_MARK = 256 * 1024;
@@ -608,30 +659,35 @@ async function sendFiles() {
     };
     dc.send(JSON.stringify(metadata));
 
-    while (offset < file.size) {
-        const end = Math.min(offset + CHUNK_SIZE, file.size);
-        const chunk = file.slice(offset, end);
-        const arrayBuf = await chunk.arrayBuffer();
+    try {
+        while (offset < file.size) {
+            const end = Math.min(offset + CHUNK_SIZE, file.size);
+            const chunk = file.slice(offset, end);
+            const arrayBuf = await chunk.arrayBuffer();
 
-        if (dc.bufferedAmount > HIGH_WATER_MARK) {
-            await new Promise((resolve, reject) => {
-                const onLow = () => resolve();
-                const onClose = () => reject(new Error("DataChannel closed"));
-                dc.addEventListener("bufferedamountlow", onLow, { once: true });
-                dc.addEventListener("close", onClose, { once: true });
-            });
+            if (dc.bufferedAmount > HIGH_WATER_MARK) {
+                await new Promise((resolve, reject) => {
+                    const onLow = () => resolve();
+                    const onClose = () => reject(new Error("DataChannel closed"));
+                    dc.addEventListener("bufferedamountlow", onLow, { once: true });
+                    dc.addEventListener("close", onClose, { once: true });
+                });
+            }
+
+            dc.send(arrayBuf);
+            offset = end;
+
+            const progress = (offset / file.size) * 100;
+            fileProg.textContent =
+                offset === file.size
+                    ? "File Sent!"
+                    : `Progress: ${progress.toFixed(1)}%`;
         }
-
-        dc.send(arrayBuf);
-        offset = end;
-
-        const progress = (offset / file.size) * 100;
-        fileProg.textContent =
-            offset === file.size ? "File Sent!" : `Progress: ${progress.toFixed(1)}%`;
+        logMessage(`Sent file: ${file.name}`);
+    } finally {
+        releaseLock();
+        fileMetadata = null;
     }
-
-    logMessage(`Sent file: ${file.name}`);
-    fileMetadata = null;
 }
 
 async function makeCall() {
