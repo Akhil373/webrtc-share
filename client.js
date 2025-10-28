@@ -155,8 +155,8 @@ createBtn.addEventListener("click", () => {
 joinBtn.addEventListener("click", () => {
     console.log("btn clicked");
     const ROOM_CODE = roomInput.value.trim();
-    if (!ROOM_CODE || ROOM_CODE.length !== 8) {
-        alert("Enter a room code");
+    if (!ROOM_CODE || (ROOM_CODE.length !== 8 && ROOM_CODE !== "lan")) {
+        alert("Enter a valid room code");
         return;
     }
     ROOM_ID = ROOM_CODE;
@@ -245,7 +245,7 @@ fileInput.addEventListener("change", (e) => {
 fileShareBtn.addEventListener("click", sendFiles);
 
 document.getElementById("lan-btn").onclick = () => {
-    location.href = "?mode=lan&roomId=" + crypto.randomUUID().slice(0, 8);
+    location.href = "?mode=lan&roomId=lan";
 };
 
 // const config = { iceServers: [{ urls: "stun:stun.l.google.com:19302" }] };
