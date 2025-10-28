@@ -17,7 +17,11 @@ const shareBtn = document.getElementById("share-btn");
 const shareModal = document.getElementById("share-modal");
 const copyUrlBtn = document.getElementById("copy-url-btn");
 
-let ROOM_ID = null;
+const isLAN = new URLSearchParams(location.search).get("mode") === "lan";
+if (isLAN) shareBtn.classList.add("hidden");
+console.log(isLAN);
+
+let ROOM_ID = new URLSearchParams(location.search).get("roomId");
 let pendingRoom = null;
 
 const urlRoom = location.hash.slice(1);
@@ -142,7 +146,7 @@ function sendDataChannelMessage() {
 createBtn.addEventListener("click", () => {
     ROOM_ID = crypto.randomUUID().substring(0, 8);
     location.hash = ROOM_ID;
-
+    initPeerConnection();
     if (ws && ws.readyState === WebSocket.OPEN) {
         sendWsMessage({ type: "join-room", roomId: ROOM_ID });
     }
@@ -157,6 +161,7 @@ joinBtn.addEventListener("click", () => {
     }
     ROOM_ID = ROOM_CODE;
     location.hash = ROOM_ID;
+    initPeerConnection();
     if (ws && ws.readyState === WebSocket.OPEN) {
         sendWsMessage({ type: "join-room", roomId: ROOM_ID });
     } else {
@@ -239,8 +244,11 @@ fileInput.addEventListener("change", (e) => {
 
 fileShareBtn.addEventListener("click", sendFiles);
 
-// const config = { iceServers: [{ urls: "stun:stun.l.google.com:19302" }] };
+document.getElementById("lan-btn").onclick = () => {
+    location.href = "?mode=lan&roomId=" + crypto.randomUUID().slice(0, 8);
+};
 
+// const config = { iceServers: [{ urls: "stun:stun.l.google.com:19302" }] };
 const config = {
     iceServers: [
         {
@@ -263,7 +271,8 @@ const config = {
     iceCandidatePoolSize: 10,
     iceTransportPolicy: "all",
 };
-const pc = new RTCPeerConnection(config);
+
+let pc;
 let dc;
 let myId = null;
 let targetId = null;
@@ -332,20 +341,54 @@ function getUserDetails() {
     };
 }
 
-pc.oniceconnectionstatechange = () => {
-    if (
-        pc.iceConnectionState === "failed" ||
-        pc.iceConnectionState === "disconnected"
-    ) {
-        logMessage("Connection failed. Try refreshing and reconnecting.", "error");
-    } else if (pc.iceConnectionState === "connected") {
-        logMessage("Peer-to-peer connection established!", "info");
+function initPeerConnection() {
+    if (pc) {
+        pc.close();
+        pc = null;
+        dc = null;
     }
-};
+    const isLAN = new URLSearchParams(location.search).get("mode") === "lan";
+    pc = new RTCPeerConnection(isLAN ? { iceServers: [] } : config);
 
-pc.onconnectionstatechange = () => {
-    //     console.log(`Connection state: ${pc.connectionState}`, "info");
-};
+    pc.oniceconnectionstatechange = () => {
+        if (
+            pc.iceConnectionState === "failed" ||
+            pc.iceConnectionState === "disconnected"
+        ) {
+            logMessage(
+                "Connection failed. Try refreshing and reconnecting.",
+                "error",
+            );
+        } else if (pc.iceConnectionState === "connected") {
+            logMessage("Peer-to-peer connection established!", "info");
+        }
+    };
+
+    pc.onicecandidate = (event) => {
+        // console.log("cadidate checking: ", event.candidate);
+        if (event.candidate) {
+            // if (event.candidate.candidate.includes(".local")) {
+            //     return;
+            // }
+
+            sendWsMessage({
+                type: "ice-candidate",
+                candidate: event.candidate,
+                from: myId,
+                to: targetId,
+                roomId: ROOM_ID,
+            });
+            //         console.log(`Sent ICE candidate to peer ${targetId}`, "info");
+        }
+    };
+
+    pc.ondatachannel = (event) => {
+        //     console.log("Received data channel");
+        dc = event.channel;
+        dc.binaryType = "arraybuffer";
+        attachDcHandler(dc);
+    };
+}
 
 updateWsStatus(false);
 
@@ -367,7 +410,10 @@ function connectWebsocket() {
             type: "register",
             name: myName,
         });
-        if (ROOM_ID) sendWsMessage({ type: "join-room", roomId: ROOM_ID });
+        if (ROOM_ID) {
+            sendWsMessage({ type: "join-room", roomId: ROOM_ID });
+            initPeerConnection();
+        }
         if (pendingRoom) {
             sendWsMessage({ type: "join-room", roomId: pendingRoom });
             pendingRoom = null;
@@ -389,7 +435,11 @@ function connectWebsocket() {
         } else if (message.type == "clientsList") {
             peerList = message.content || [];
             updatePeersList(peerList);
-            if (peerList.find((p) => p.id === myId) && peerList.length === 1) {
+            if (
+                peerList.find((p) => p.id === myId) &&
+                peerList.length === 1 &&
+                !isLAN
+            ) {
                 notify.textContent = `📌 Share this room to other device! ⤵️`;
                 notify.classList.remove("hidden");
             }
@@ -446,24 +496,6 @@ function sendWsMessage(message) {
         console.log("Error sending message to WebSocket server", "error");
     }
 }
-
-pc.onicecandidate = (event) => {
-    // console.log("cadidate checking: ", event.candidate);
-    if (event.candidate) {
-        // if (event.candidate.candidate.includes(".local")) {
-        //     return;
-        // }
-
-        sendWsMessage({
-            type: "ice-candidate",
-            candidate: event.candidate,
-            from: myId,
-            to: targetId,
-            roomId: ROOM_ID,
-        });
-        //         console.log(`Sent ICE candidate to peer ${targetId}`, "info");
-    }
-};
 
 let dcBeat = null;
 const DC_BEAT_MS = 10_000;
@@ -590,13 +622,6 @@ function attachDcHandler(channel) {
         stopDcBeat();
     };
 }
-
-pc.ondatachannel = (event) => {
-    //     console.log("Received data channel");
-    dc = event.channel;
-    dc.binaryType = "arraybuffer";
-    attachDcHandler(dc);
-};
 
 fileInput.addEventListener("change", () => {
     const file = fileInput.files[0];

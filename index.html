@@ -320,94 +320,104 @@
       class="min-h-screen text-[#ebdbb2] flex items-center justify-center p-6"
     >
       <div
-        class="w-full max-w-md rounded-xl shadow-2xl bg-[#3c3836] border border-[#504945] p-8 space-y-6"
+        class="w-full max-w-4xl grid md:grid-cols-2 gap-0 rounded-xl shadow-2xl bg-[#3c3836] border border-[#504945] overflow-hidden"
       >
-        <div class="text-center">
-          <h1 class="text-2xl font-bold text-[#fabd2f]">
-            Start a secure file share
-          </h1>
-          <p class="text-sm text-[#a89984] mt-1">
-            One click and you’ll get a private room link to share.
-          </p>
-        </div>
+        <!-- LEFT: private / internet room -->
+        <div class="p-8 space-y-6 border-r border-[#504945]">
+          <div class="text-center">
+            <h2 class="text-2xl font-bold text-[#fabd2f]">Private room</h2>
+            <p class="text-sm text-[#a89984] mt-1">
+              Works across Wi-Fi, mobile, VPN
+            </p>
+          </div>
 
-        <button
-          id="create-btn"
-          class="w-full cursor-pointer flex items-center justify-center gap-3 bg-[#fe8019] hover:bg-[#fd9644] text-[#282828] font-semibold py-3 px-4 rounded-lg transition transform hover:scale-[1.02] focus:outline-none focus:ring-4 focus:ring-[#fe8019]/50"
-        >
-          <svg
-            class="w-6 h-6"
-            fill="none"
-            stroke="currentColor"
-            stroke-width="2"
-            viewBox="0 0 24 24"
+          <button
+            id="create-btn"
+            class="w-full flex items-center justify-center gap-3 bg-[#fe8019] hover:bg-[#fd9644] text-[#282828] font-semibold py-3 px-4 rounded-lg transition transform hover:scale-[1.02] focus:outline-none focus:ring-4 focus:ring-[#fe8019]/50"
           >
-            <path
-              stroke-linecap="round"
-              stroke-linejoin="round"
-              d="M12 4v16m8-8H4"
-            />
-          </svg>
-          Create room
-        </button>
+            <svg
+              class="w-6 h-6"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              viewBox="0 0 24 24"
+            >
+              <path
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M12 4v16m8-8H4"
+              />
+            </svg>
+            Create room
+          </button>
 
-        <div
-          class="flex items-center text-[#7c6f64] text-xs uppercase tracking-wider"
-        >
-          <span class="h-px bg-[#504945] flex-1"></span>
-          <span class="px-3">or</span>
-          <span class="h-px bg-[#504945] flex-1"></span>
-        </div>
-
-        <div class="space-y-3">
-          <label for="roomCode" class="block text-sm font-medium text-[#b8bb26]"
-            >Already have a code?</label
+          <div
+            class="flex items-center text-[#7c6f64] text-xs uppercase tracking-wider"
           >
-          <form class="flex flex-col gap-3">
+            <span class="h-px bg-[#504945] flex-1"></span
+            ><span class="px-3">or</span
+            ><span class="h-px bg-[#504945] flex-1"></span>
+          </div>
+
+          <form id="join-private-form" class="space-y-3">
+            <label
+              for="roomCode"
+              class="block text-sm font-medium text-[#b8bb26]"
+              >Already have a code?</label
+            >
             <input
               id="roomCode"
               type="text"
               placeholder="a8f3k2z1"
               maxlength="8"
-              class="flex-1 bg-[#282828] border border-[#504945] rounded-md px-4 py-2 text-[#ebdbb2] placeholder-[#7c6f64] focus:outline-none focus:ring-2 focus:ring-[#b8bb26]"
+              class="w-full bg-[#282828] border border-[#504945] rounded-md px-4 py-2 text-[#ebdbb2] placeholder-[#7c6f64] focus:outline-none focus:ring-2 focus:ring-[#b8bb26]"
             />
             <button
-              id="join-btn"
               type="submit"
-              class="bg-[#458588] cursor-pointer hover:bg-[#83a598] text-[#282828] font-semibold px-5 py-2 rounded-md transition"
+              id="join-btn"
+              class="w-full bg-[#458588] hover:bg-[#83a598] text-[#282828] font-semibold px-5 py-2.5 rounded-md transition"
             >
               Join
             </button>
           </form>
         </div>
 
-        <p class="text-xs text-[#a89984] text-center">
-          Rooms expire 30 min after everyone leaves.
-        </p>
-        <footer class="mt-auto w-full py-4 text-center text-xs text-[#a89984]">
-          <a
-            href="https://github.com/Akhil373/webrtc-share"
-            target="_blank"
-            rel="noopener noreferrer"
-            class="inline-flex items-center gap-2 hover:text-[#ebdbb2] transition"
+        <!-- RIGHT: LAN-only room -->
+        <div class="p-8 space-y-6 bg-[#1d2021]">
+          <div class="text-center">
+            <h2 class="text-2xl font-bold text-[#b8bb26]">LAN room</h2>
+            <p class="text-sm text-[#a89984] mt-1">
+              Same Wi-Fi → zero config, fastest speed
+            </p>
+          </div>
+
+          <button
+            id="lan-btn"
+            class="w-full flex items-center justify-center gap-3 bg-green-700 hover:bg-green-600 text-[#282828] font-semibold py-3 px-4 rounded-lg transition transform hover:scale-[1.02] focus:outline-none focus:ring-4 focus:ring-green-500/50"
           >
             <svg
-              class="w-3 h-3 fill-current"
-              viewBox="0 0 16 16"
-              aria-hidden="true"
+              class="w-6 h-6"
+              fill="none"
+              stroke="currentColor"
+              stroke-width="2"
+              viewBox="0 0 24 24"
             >
               <path
-                d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38
-               0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01
-               1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95
-               0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0
-               1.38.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15
-               0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8z"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+                d="M13 10V3L4 14h7v7l9-11h-7z"
               />
             </svg>
-            GitHub
-          </a>
-        </footer>
+            Start LAN room
+          </button>
+
+          <div class="mt-6 text-xs text-[#7c6f64] text-center">
+            No internet? No problem.
+            <span class="block mt-1"
+              >All traffic stays inside your local network.</span
+            >
+          </div>
+        </div>
       </div>
     </div>
 
