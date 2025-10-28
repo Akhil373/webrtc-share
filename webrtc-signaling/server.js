@@ -95,7 +95,7 @@ wss.on("connection", function connection(ws) {
                 if (!room1) return;
 
                 const ip = msg.candidate.candidate.split(" ")[4];
-                if (room1 === "lan" && !classifyIp(ip).isRealLAN) return;
+                if (ws.roomId === "lan" && !classifyIp(ip).isRealLAN) return;
 
                 room1.forEach((client) => {
                     if (
