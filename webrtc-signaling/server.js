@@ -95,14 +95,13 @@ wss.on("connection", function connection(ws) {
                 if (!room1) return;
 
                 const ip = msg.candidate.candidate.split(" ")[4];
-                if (ws.mode === "lan" && !classifyIp(ip).isRealLAN) return;
+                if (room1 === "lan" && !classifyIp(ip).isRealLAN) return;
 
                 room1.forEach((client) => {
                     if (
                         client !== ws &&
                         client.readyState === 1 &&
-                        (!msg.to || client.id === msg.to) &&
-                        client.mode === ws.mode
+                        (!msg.to || client.id === msg.to)
                     ) {
                         client.send(JSON.stringify(msg));
                     }
