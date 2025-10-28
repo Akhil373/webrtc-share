@@ -29,6 +29,35 @@ const broadcastClients = (roomId) => {
     });
 };
 
+const classifyIp = (ip) => {
+    if (ip.endsWith(".local")) {
+        return { isRealLAN: true, isCGNAT: false };
+    }
+
+    if (ip.includes(":")) {
+        const isRealLAN =
+            ip.startsWith("fd") || ip.startsWith("fe80:") || ip === "::1";
+        return { isRealLAN, isCGNAT: false };
+    }
+
+    const parts = ip.split(".").map(Number);
+    if (parts.length !== 4 || parts.some(isNaN)) {
+        return { isRealLAN: false, isCGNAT: false };
+    }
+
+    const [a, b] = parts;
+
+    const isCGNAT = a === 100 && b >= 64 && b <= 127;
+
+    const isRealLAN =
+        a === 10 ||
+        (a === 192 && b === 168) ||
+        (a === 172 && b >= 16 && b <= 31) ||
+        ip === "127.0.0.1";
+
+    return { isRealLAN, isCGNAT };
+};
+
 wss.on("connection", function connection(ws) {
     ws.id = nanoid(8);
     ws.send(JSON.stringify({ yourID: ws.id }));
@@ -47,7 +76,6 @@ wss.on("connection", function connection(ws) {
 
             case "fileMeta":
             case "answer":
-            case "ice-candidate":
             case "offer":
                 const room = rooms.get(ws.roomId);
                 if (!room) return;
@@ -56,6 +84,25 @@ wss.on("connection", function connection(ws) {
                         client !== ws &&
                         client.readyState === 1 &&
                         (!msg.to || client.id === msg.to)
+                    ) {
+                        client.send(JSON.stringify(msg));
+                    }
+                });
+                break;
+
+            case "ice-candidate":
+                const room1 = rooms.get(ws.roomId);
+                if (!room1) return;
+
+                const ip = msg.candidate.candidate.split(" ")[4];
+                if (ws.mode === "lan" && !classifyIp(ip).isRealLAN) return;
+
+                room1.forEach((client) => {
+                    if (
+                        client !== ws &&
+                        client.readyState === 1 &&
+                        (!msg.to || client.id === msg.to) &&
+                        client.mode === ws.mode
                     ) {
                         client.send(JSON.stringify(msg));
                     }
