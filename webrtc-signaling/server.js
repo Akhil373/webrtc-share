@@ -94,6 +94,7 @@ wss.on("connection", function connection(ws, req) {
     ws.ip = rawIp.includes("::ffff:") ? rawIp.split(":").pop() : rawIp;
 
     console.log(ws.ip);
+    classifyIp(ws.ip);
 
     ws.send(JSON.stringify({ yourID: ws.id }));
 
