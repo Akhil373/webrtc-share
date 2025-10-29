@@ -1,4 +1,4 @@
-const myIdEl = document.getElementById("my-id");
+const myIdEl = document.querySelectorAll(".my-id");
 const selectedPeerEl = document.getElementById("selected-peer");
 const peersListEl = document.getElementById("peers-list");
 const connectBtn = document.getElementById("call-btn");
@@ -8,7 +8,8 @@ const sendBtn = document.getElementById("send-btn");
 const fileInput = document.getElementById("fileShare");
 const fileShareBtn = document.getElementById("send-file-btn");
 const nameEl = document.getElementById("my-name");
-const fileProg = document.getElementById("file-progress");
+const fileProg = document.getElementById("progress-text");
+const progFill = document.getElementById("progress-fill");
 const notify = document.getElementById("notify");
 const createBtn = document.getElementById("create-btn");
 const joinBtn = document.getElementById("join-btn");
@@ -19,7 +20,6 @@ const copyUrlBtn = document.getElementById("copy-url-btn");
 
 const isLAN = new URLSearchParams(location.search).get("mode") === "lan";
 if (isLAN) shareBtn.classList.add("hidden");
-console.log(isLAN);
 
 let ROOM_ID = new URLSearchParams(location.search).get("roomId");
 let pendingRoom = null;
@@ -153,7 +153,6 @@ createBtn.addEventListener("click", () => {
 });
 
 joinBtn.addEventListener("click", () => {
-    console.log("btn clicked");
     const ROOM_CODE = roomInput.value.trim();
     if (!ROOM_CODE || (ROOM_CODE.length !== 8 && ROOM_CODE !== "lan")) {
         alert("Enter a valid room code");
@@ -365,12 +364,7 @@ function initPeerConnection() {
     };
 
     pc.onicecandidate = (event) => {
-        // console.log("cadidate checking: ", event.candidate);
         if (event.candidate) {
-            // if (event.candidate.candidate.includes(".local")) {
-            //     return;
-            // }
-
             sendWsMessage({
                 type: "ice-candidate",
                 candidate: event.candidate,
@@ -378,12 +372,10 @@ function initPeerConnection() {
                 to: targetId,
                 roomId: ROOM_ID,
             });
-            //         console.log(`Sent ICE candidate to peer ${targetId}`, "info");
         }
     };
 
     pc.ondatachannel = (event) => {
-        //     console.log("Received data channel");
         dc = event.channel;
         dc.binaryType = "arraybuffer";
         attachDcHandler(dc);
@@ -395,8 +387,7 @@ updateWsStatus(false);
 function connectWebsocket() {
     if (isManuallyClosed) return;
 
-    // ws = new WebSocket("wss://webrtc-share.onrender.com");
-    ws = new WebSocket("https://peershare-preview.onrender.com");
+    ws = new WebSocket("wss://webrtc-share.onrender.com");
 
     ws.onopen = () => {
         updateWsStatus(true);
@@ -405,7 +396,6 @@ function connectWebsocket() {
         const emoji =
             deviceType === "Mobile" ? "📱" : deviceType === "Tablet" ? "📱" : "💻";
         const myName = `${emoji} ${browser}`;
-        console.log(myName);
         nameEl.textContent = myName;
         sendWsMessage({
             type: "register",
@@ -425,7 +415,9 @@ function connectWebsocket() {
         const message = JSON.parse(event.data);
         if (message.yourID) {
             myId = message.yourID;
-            myIdEl.textContent = myId;
+            myIdEl.forEach((element) => {
+                element.textContent = myId;
+            });
             return;
         }
 
@@ -563,6 +555,7 @@ function attachDcHandler(channel) {
                     (receivedBytes / receivedfileMetadata.fileSize) * 100,
                 );
                 fileProg.textContent = `Receiving: ${percent.toFixed(1)}%`;
+                progFill.style.width = percent;
             }
             if (receivedBytes >= receivedfileMetadata.fileSize) {
                 if (fileProg) {
@@ -644,7 +637,6 @@ async function requestLock() {
     }
     try {
         wakeLock = await navigator.wakeLock.request("screen");
-        console.log("Screen kept awake");
         wakeLock.addEventListener("release", () => console.log("wakeLock lost."));
     } catch (err) {
         console.error("wake lock failed: ", err);
@@ -704,6 +696,7 @@ async function sendFiles() {
             offset = end;
 
             const progress = (offset / file.size) * 100;
+            progFill.style.width = progress;
             fileProg.textContent =
                 offset === file.size
                     ? "File Sent!"

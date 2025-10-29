@@ -412,9 +412,9 @@
           </button>
 
           <div class="mt-6 text-xs text-[#7c6f64] text-center">
-            No internet? No problem.
+            Unable to discover local devices?
             <span class="block mt-1"
-              >All traffic stays inside your local network.</span
+              >You can always switch to private room</span
             >
           </div>
         </div>
@@ -461,7 +461,7 @@
         </div>
         <div class="status-item text-center">
           <div class="status-label opacity-70">ID</div>
-          <div id="my-id" class="status-value font-semibold">-</div>
+          <div class="my-id status-value font-semibold">-</div>
         </div>
         <div class="status-item text-center">
           <div class="status-label opacity-70">DC</div>
@@ -489,8 +489,7 @@
         <div class="status-item flex flex-col items-center min-w-[120px]">
           <div class="status-label text-sm opacity-80 mb-1">Your ID</div>
           <div
-            id="my-id"
-            class="status-value font-bold text-base"
+            class="my-id status-value font-bold text-base"
             style="color: #d79921"
           >
             Not registered
@@ -584,10 +583,24 @@
             </button>
           </div>
 
-          <div
-            id="file-progress"
-            class="min-h-[1.4em] mt-2 text-xs md:text-sm text-[#a89984] px-1"
-          ></div>
+          <div id="file-prog-div" class="w-[60%] hidden mx-auto">
+            <div class="flex justify-between mb-1">
+              <span class="text-sm font-medium text-[#ebdbb2]">Progress</span>
+              <span
+                id="progress-text"
+                class="text-sm font-medium text-[#ebdbb2]"
+                >0%</span
+              >
+            </div>
+
+            <div class="w-full h-2 rounded-full bg-[#3c3836] overflow-hidden">
+              <div
+                id="progress-fill"
+                class="h-full rounded-full bg-[#b8860b] transition-all duration-300 ease-out"
+                style="width: 0%"
+              ></div>
+            </div>
+          </div>
         </div>
 
         <!-- Message Panel -->
