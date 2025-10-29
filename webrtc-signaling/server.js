@@ -3,6 +3,58 @@ import { nanoid } from "nanoid";
 
 const rooms = new Map();
 
+const getBaseIp = (ip) => {
+    if (!ip) return null;
+
+    // IPv4
+    if (ip.includes(".")) {
+        const parts = ip.split(".");
+        return parts.slice(0, 3).join(".");
+    }
+
+    // IPv6
+    if (ip.includes(":")) {
+        const parts = ip.split(":");
+        return parts.slice(0, 4).join(":");
+    }
+
+    return ip;
+};
+
+const broadcastClients = (roomId) => {
+    const room = rooms.get(roomId);
+    if (!room) return;
+
+    if (roomId === "lan") {
+        room.forEach((ws) => {
+            if (ws.readyState !== 1) return;
+
+            const myBaseIp = getBaseIp(ws.ip);
+
+            const list = Array.from(room)
+                .filter((s) => {
+                    const sameIp = getBaseIp(s.ip) === myBaseIp;
+                    const valid = s.name || s.readyState === 1;
+                    return sameIp && valid;
+                })
+                .map((s) => ({ id: s.id, name: s.name }));
+
+            const msg = JSON.stringify({ type: "clientsList", content: list });
+            ws.send(msg);
+        });
+    } else {
+        const list = Array.from(room)
+            .filter((s) => s.name || s.readyState === 1)
+            .map((s) => ({ id: s.id, name: s.name }));
+
+        const msg = JSON.stringify({ type: "clientsList", content: list });
+
+        room.forEach((s) => {
+            if (s.readyState === 1) s.send(msg);
+        });
+    }
+};
+
 function leaveRoom(ws) {
     if (!ws.roomId) return;
 
@@ -14,29 +66,22 @@ function leaveRoom(ws) {
     ws.roomId = null;
 }
 
-const broadcastClients = (roomId) => {
-    const room = rooms.get(roomId);
-    if (!room) return;
+wss.on("connection", function connection(ws, req) {
+    ws.id = nanoid(5);
 
-    const list = Array.from(room)
-        .filter((s) => s.name || s.readyState === 1)
-        .map((s) => ({ id: s.id, name: s.name }));
+    let rawIp = req.headers["x-forwarded-for"] || req.socket.remoteAddress;
+    if (rawIp && typeof rawIp === "string" && rawIp.includes(",")) {
+        rawIp = rawIp.split(",")[0].trim();
+    }
 
-    const msg = JSON.stringify({ type: "clientsList", content: list });
+    ws.ip = rawIp?.includes("::ffff:") ? rawIp.split(":").pop() : rawIp;
 
-    room.forEach((s) => {
-        if (s.readyState === 1) s.send(msg);
-    });
-};
+    console.log("Connected:", ws.id, ws.ip);
 
-wss.on("connection", function connection(ws) {
-    ws.id = nanoid(8);
     ws.send(JSON.stringify({ yourID: ws.id }));
-    // broadcastClients(ws.roomId);
 
     ws.on("message", function message(data) {
         const msg = JSON.parse(data);
-
         msg.from = ws.id;
 
         switch (msg.type) {
@@ -47,27 +92,41 @@ wss.on("connection", function connection(ws) {
 
             case "fileMeta":
             case "answer":
-            case "ice-candidate":
             case "offer":
+            case "ice-candidate":
                 const room = rooms.get(ws.roomId);
                 if (!room) return;
-                room.forEach((client) => {
-                    if (
-                        client !== ws &&
-                        client.readyState === 1 &&
-                        (!msg.to || client.id === msg.to)
-                    ) {
+
+                if (ws.roomId === "lan") {
+                    const myBaseIp = getBaseIp(ws.ip);
+
+                    room.forEach((client) => {
+                        if (client === ws || client.readyState !== 1) return;
+                        if (msg.to && client.id !== msg.to) return;
+
+                        const clientBaseIp = getBaseIp(client.ip);
+                        if (myBaseIp === clientBaseIp) {
+                            client.send(JSON.stringify(msg));
+                        }
+                    });
+                } else {
+                    room.forEach((client) => {
+                        if (client === ws || client.readyState !== 1) return;
+                        if (msg.to && client.id !== msg.to) return;
+
                         client.send(JSON.stringify(msg));
-                    }
-                });
+                    });
+                }
                 break;
 
             case "join-room":
                 leaveRoom(ws);
                 const { roomId } = msg;
+
                 if (!rooms.has(roomId)) rooms.set(roomId, new Set());
                 rooms.get(roomId).add(ws);
                 ws.roomId = roomId;
+
                 ws.send(JSON.stringify({ type: "joined", roomId }));
                 broadcastClients(roomId);
                 break;
@@ -78,16 +137,21 @@ wss.on("connection", function connection(ws) {
                 break;
 
             default:
+                // Broadcast to all connected clients
                 wss.clients.forEach((client) => {
-                    if (client.readyState === 1) client.send(JSON.stringify(msg));
+                    if (client.readyState === 1) {
+                        client.send(JSON.stringify(msg));
+                    }
                 });
                 break;
         }
     });
+
     ws.on("error", console.error);
+
     ws.on("close", () => {
         const tempRoomId = ws.roomId;
         leaveRoom(ws);
-        broadcastClients(tempRoomId);
+        if (tempRoomId) broadcastClients(tempRoomId);
     });
 });
