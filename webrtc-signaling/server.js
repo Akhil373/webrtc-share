@@ -91,6 +91,10 @@ function fetchIP(msg) {
 wss.on("connection", function connection(ws, req) {
     ws.id = nanoid(5);
     const rawIp = req.headers["x-forwarded-for"] || req.socket.remoteAddress;
+    if (rawIp && typeof rawIp === "string" && rawIp.includes(",")) {
+        rawIp = rawIp.split(",")[0].trim();
+    }
+
     ws.ip = rawIp.includes("::ffff:") ? rawIp.split(":").pop() : rawIp;
 
     console.log(ws.ip);
