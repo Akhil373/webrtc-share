@@ -17,6 +17,7 @@ const roomInput = document.getElementById("roomCode");
 const shareBtn = document.getElementById("share-btn");
 const shareModal = document.getElementById("share-modal");
 const copyUrlBtn = document.getElementById("copy-url-btn");
+console.log(progFill);
 
 const isLAN = new URLSearchParams(location.search).get("mode") === "lan";
 if (isLAN) shareBtn.classList.add("hidden");
@@ -555,7 +556,7 @@ function attachDcHandler(channel) {
                     (receivedBytes / receivedfileMetadata.fileSize) * 100,
                 );
                 fileProg.textContent = `Receiving: ${percent.toFixed(1)}%`;
-                progFill.style.width = percent;
+                progFill.style.width = `${percent}%`;
             }
             if (receivedBytes >= receivedfileMetadata.fileSize) {
                 if (fileProg) {
@@ -696,13 +697,13 @@ async function sendFiles() {
             offset = end;
 
             const progress = (offset / file.size) * 100;
-            progFill.style.width = progress;
+            progFill.style.width = `${progress}%`;
             fileProg.textContent =
                 offset === file.size
                     ? "File Sent!"
                     : `Progress: ${progress.toFixed(1)}%`;
         }
-        logMessage(`Sent file: ${file.name}`);
+        if (offset === file.size) logMessage(`Sent file: ${file.name}`);
     } finally {
         releaseLock();
         fileMetadata = null;
