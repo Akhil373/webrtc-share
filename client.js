@@ -395,7 +395,8 @@ updateWsStatus(false);
 function connectWebsocket() {
     if (isManuallyClosed) return;
 
-    ws = new WebSocket("wss://webrtc-share.onrender.com");
+    // ws = new WebSocket("wss://webrtc-share.onrender.com");
+    ws = new WebSocket("https://peershare-preview.onrender.com");
 
     ws.onopen = () => {
         updateWsStatus(true);
