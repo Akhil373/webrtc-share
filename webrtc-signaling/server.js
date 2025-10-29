@@ -3,33 +3,8 @@ import { nanoid } from "nanoid";
 
 const rooms = new Map();
 
-function leaveRoom(ws) {
-    if (!ws.roomId) return;
-
-    const set = rooms.get(ws.roomId);
-    if (set) {
-        set.delete(ws);
-        if (set.size === 0) rooms.delete(ws.roomId);
-    }
-    ws.roomId = null;
-}
-
-const broadcastClients = (roomId) => {
-    const room = rooms.get(roomId);
-    if (!room) return;
-
-    const list = Array.from(room)
-        .filter((s) => s.name || s.readyState === 1)
-        .map((s) => ({ id: s.id, name: s.name }));
-
-    const msg = JSON.stringify({ type: "clientsList", content: list });
-
-    room.forEach((s) => {
-        if (s.readyState === 1) s.send(msg);
-    });
-};
-
 const classifyIp = (ip) => {
+    if (!ip) return { isRealLAN: false, isCGNAT: false };
     if (ip.endsWith(".local")) {
         return { isRealLAN: true, isCGNAT: false };
     }
@@ -58,10 +33,69 @@ const classifyIp = (ip) => {
     return { isRealLAN, isCGNAT };
 };
 
-wss.on("connection", function connection(ws) {
-    ws.id = nanoid(8);
+const broadcastClients = (roomId) => {
+    const room = rooms.get(roomId);
+    if (!room) return;
+
+    let list;
+
+    if (roomId !== "lan") {
+        list = Array.from(room)
+            .filter((s) => s.name || s.readyState === 1)
+            .map((s) => ({ id: s.id, name: s.name }));
+    } else {
+        list = Array.from(room)
+            .filter((s) => {
+                const ipInfo = classifyIp(s.ip);
+                return ipInfo.isRealLAN && !ipInfo.isCGNAT;
+            })
+            .map((s) => ({ id: s.id, name: s.name }));
+    }
+
+    const msg = JSON.stringify({ type: "clientsList", content: list });
+
+    room.forEach((s) => {
+        if (s.readyState === 1) s.send(msg);
+    });
+};
+
+function leaveRoom(ws) {
+    if (!ws.roomId) return;
+
+    const set = rooms.get(ws.roomId);
+    if (set) {
+        set.delete(ws);
+        if (set.size === 0) rooms.delete(ws.roomId);
+    }
+    ws.roomId = null;
+}
+
+function fetchIP(msg) {
+    if (
+        !msg.candidate?.candidate ||
+        typeof msg.candidate.candidate !== "string"
+    ) {
+        console.warn("Received invalid ICE candidate string:", msg.candidate);
+        return null;
+    }
+
+    const candidateParts = msg.candidate.candidate.split(" ");
+    if (candidateParts.length < 5) {
+        console.warn("Malformed ICE candidate string:", msg.candidate.candidate);
+        return null;
+    }
+
+    return candidateParts[4];
+}
+
+wss.on("connection", function connection(ws, req) {
+    ws.id = nanoid(5);
+    const rawIp = req.headers["x-forwarded-for"] || req.socket.remoteAddress;
+    ws.ip = rawIp.includes("::ffff:") ? rawIp.split(":").pop() : rawIp;
+
+    console.log(ws.ip);
+
     ws.send(JSON.stringify({ yourID: ws.id }));
-    // broadcastClients(ws.roomId);
 
     ws.on("message", function message(data) {
         const msg = JSON.parse(data);
@@ -92,10 +126,12 @@ wss.on("connection", function connection(ws) {
 
             case "ice-candidate":
                 const room1 = rooms.get(ws.roomId);
-                if (!room1) return;
+                if (!room1 || !msg) return;
 
-                const ip = msg.candidate.candidate.split(" ")[4];
-                if (ws.roomId === "lan" && !classifyIp(ip).isRealLAN) return;
+                const candidateIp = fetchIP(msg);
+                if (!candidateIp) return;
+
+                if (ws.roomId === "lan" && !classifyIp(candidateIp).isRealLAN) return;
 
                 room1.forEach((client) => {
                     if (
@@ -112,6 +148,7 @@ wss.on("connection", function connection(ws) {
                 leaveRoom(ws);
                 const { roomId } = msg;
                 if (!rooms.has(roomId)) rooms.set(roomId, new Set());
+
                 rooms.get(roomId).add(ws);
                 ws.roomId = roomId;
                 ws.send(JSON.stringify({ type: "joined", roomId }));
