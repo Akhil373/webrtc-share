@@ -28,6 +28,15 @@ const isLAN = new URLSearchParams(location.search).get("mode") === "lan";
 let ROOM_ID = new URLSearchParams(location.search).get("roomId");
 const urlRoom = location.hash.slice(1);
 
+const ALPHABET = "abcdefghijklmnopqrstuvwxyz";
+function generateCode(len = 6) {
+    const bytes = new Uint8Array(len);
+    crypto.getRandomValues(bytes);
+    let code = "";
+    for (let i = 0; i < len; i++) code += ALPHABET[bytes[i] % 26];
+    return code;
+}
+
 function handleWsOpen() {
     updateWsStatus(true);
     const { browser, deviceType } = getUserDetails();
@@ -181,7 +190,7 @@ function handleSelectPeer(peer) {
 // -- all event listenerss -----
 
 dom.createBtn.addEventListener("click", () => {
-    ROOM_ID = crypto.randomUUID().substring(0, 8);
+    ROOM_ID = generateCode(6);
     location.hash = ROOM_ID;
     pc = setupPeerConnection();
     if (ws && ws.readyState === WebSocket.OPEN) {
@@ -190,7 +199,7 @@ dom.createBtn.addEventListener("click", () => {
 });
 
 dom.joinBtn.addEventListener("click", () => {
-    const ROOM_CODE = roomInput.value.trim();
+    const ROOM_CODE = dom.roomInput.value.trim();
     if (!ROOM_CODE || (ROOM_CODE.length !== 8 && ROOM_CODE !== "lan")) {
         alert("Enter a valid room code");
         return;
@@ -318,6 +327,6 @@ updateWsStatus(false);
 startWebsocket();
 if (isLAN) dom.shareBtn.classList.add("hidden");
 if (urlRoom) {
-    roomInput.value = urlRoom;
-    joinBtn.click();
+    dom.roomInput.value = urlRoom;
+    dom.joinBtn.click();
 }
