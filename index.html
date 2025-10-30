@@ -393,7 +393,7 @@
 
           <button
             id="lan-btn"
-            class="w-full flex items-center justify-center gap-3 bg-green-700 hover:bg-green-600 text-[#282828] font-semibold py-3 px-4 rounded-lg transition transform hover:scale-[1.02] focus:outline-none focus:ring-4 focus:ring-green-500/50"
+            class="cursor-pointer w-full flex items-center justify-center gap-3 bg-green-700 hover:bg-green-600 text-[#282828] font-semibold py-3 px-4 rounded-lg transition transform hover:scale-[1.02] focus:outline-none focus:ring-4 focus:ring-green-500/50"
           >
             <svg
               class="w-6 h-6"
@@ -531,38 +531,40 @@
       <div class="main-content m-3 flex flex-col lg:flex-row gap-4 md:gap-6">
         <!-- Side Panel -->
         <div
-          class="panel rounded-lg p-4 md:p-6 shadow-lg flex-1 lg:min-w-[350px]"
+          class="panel rounded-lg p-4 md:p-6 flex flex-col gap-4 shadow-lg flex-1 lg:min-w-[350px]"
           id="side-panel"
           style="background: #1d2021; color: #ebdbb2; border: 1px solid #504945"
         >
-          <h2 class="text-xl md:text-2xl mb-4 pb-3 border-b border-[#504945]">
-            Available Peers
-          </h2>
+          <div id="list-peers" class="hidden">
+            <h2 class="text-xl md:text-2xl mb-4 pb-3 border-b border-[#504945]">
+              Available Peers
+            </h2>
 
-          <ul
-            id="peers-list"
-            class="peers-list min-h-[300px] grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4 md:min-h-[300px] overflow-y-auto justify-items-center content-start p-2 md:p-4"
-          ></ul>
+            <ul
+              id="peers-list"
+              class="peers-list min-h-[300px] grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-3 xl:grid-cols-4 gap-3 md:gap-4 md:min-h-[300px] overflow-y-auto justify-items-center content-start p-2 md:p-4"
+            ></ul>
 
-          <div class="action-buttons flex gap-2 md:gap-3 mt-4 md:mt-6">
-            <button
-              id="call-btn"
-              class="btn cursor-pointer btn-success flex-1 px-4 py-2.5 md:px-5 md:py-3 rounded-lg font-bold transition-all disabled:bg-[#7c6f64] disabled:cursor-not-allowed text-sm md:text-base"
-              style="background: #689d6a; color: #282828"
-              disabled
-            >
-              Connect
-            </button>
+            <div class="action-buttons flex gap-2 md:gap-3 mt-4 md:mt-6">
+              <button
+                id="call-btn"
+                class="btn cursor-pointer btn-success flex-1 px-4 py-2.5 md:px-5 md:py-3 rounded-lg font-bold transition-all disabled:bg-[#7c6f64] disabled:cursor-not-allowed text-sm md:text-base"
+                style="background: #689d6a; color: #282828"
+                disabled
+              >
+                Connect
+              </button>
+            </div>
           </div>
 
           <div
-            class="flex flex-col sm:flex-row justify-center items-stretch sm:items-center gap-3 my-4 md:my-6"
+            id="file-select-only"
+            class="flex flex-col md:flex-row justify-center items-stretch md:items-center gap-4"
           >
             <label
               for="fileShare"
-              class="file-input-label inline-block px-4 py-2.5 rounded-md border border-dashed cursor-pointer transition-all text-center text-sm md:text-base"
               id="file-input-label"
-              style="color: #8ec07c; border-color: #458588"
+              class="file-input-label px-8 py-4 rounded-md border border-dashed cursor-pointer transition-all text-center text-sm md:text-base"
             >
               📎 choose files to send...
             </label>
@@ -575,15 +577,21 @@
             />
             <button
               type="button"
-              class="btn cursor-pointer btn-primary px-4 py-2.5 rounded-lg font-bold transition-all text-sm md:text-base"
+              class="btn cursor-pointer btn-primary px-8 py-4 rounded-lg font-bold transition-all text-sm md:text-base"
               id="send-file-btn"
               style="background: #458588; color: #282828"
             >
               send
             </button>
           </div>
+          <p
+            id="file-hint"
+            class="flex justify-center items-center text-xs p-6 text-[#a89984]"
+          >
+            Add files first – nearby devices will appear automatically
+          </p>
 
-          <div id="file-prog-div" class="w-[60%] mx-auto">
+          <div id="file-prog-div" class="w-[60%] mx-auto hidden">
             <div class="flex justify-between mb-1">
               <span class="text-sm font-medium text-[#ebdbb2]">Progress</span>
               <span
@@ -609,7 +617,7 @@
           style="background: #1d2021; color: #ebdbb2; border: 1px solid #504945"
         >
           <h2 class="text-xl md:text-2xl mb-4 pb-3 border-b border-[#504945]">
-            connection log
+            chat / connection log
           </h2>
 
           <div
@@ -625,7 +633,7 @@
           </div>
 
           <div
-            class="message-input flex gap-3 md:gap-4 mt-4"
+            class="message-input flex flex-col md:flex-row md:gap-4 mt-4"
             style="background: #3c3836"
           >
             <input
@@ -637,7 +645,7 @@
             />
             <button
               id="send-btn"
-              class="px-4 cursor-pointer py-2 md:px-5 md:py-2.5 rounded-lg font-bold text-sm md:text-base"
+              class="px-4 cursor-pointer py-2 md:px-5 md:py-2.5 m-4 rounded-lg font-bold text-sm md:text-base"
               style="background: #458588; color: #282828"
               disabled
             >
@@ -671,7 +679,7 @@
         </a>
       </footer>
     </div>
-    <script src="client.js" type="module"></script>
+    <script src="js/main.js" type="module"></script>
     <script>
       if ("serviceWorker" in navigator) {
         window.addEventListener("load", () => {
