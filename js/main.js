@@ -200,7 +200,7 @@ dom.createBtn.addEventListener("click", () => {
 
 dom.joinBtn.addEventListener("click", () => {
     const ROOM_CODE = dom.roomInput.value.trim();
-    if (!ROOM_CODE || (ROOM_CODE.length !== 8 && ROOM_CODE !== "lan")) {
+    if (!ROOM_CODE || (ROOM_CODE.length !== 6 && ROOM_CODE !== "lan")) {
         alert("Enter a valid room code");
         return;
     }
