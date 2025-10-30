@@ -80,6 +80,8 @@ export function attachDcHandler(channel) {
 
     channel.onopen = () => {
         updateDcStatus(true);
+        document.getElementById("list-peers").classList.remove("hidden");
+        document.getElementById("file-hint").classList.add("hidden");
         startDcBeat();
     };
 
@@ -119,7 +121,7 @@ export function attachDcHandler(channel) {
                     100,
                     (receivedBytes / receivedfileMetadata.fileSize) * 100,
                 );
-                dom.dom.fileProgDiv.classList.remove("hidden");
+                dom.fileProgDiv.classList.remove("hidden");
                 dom.fileProg.textContent = `${percent.toFixed(1)}%`;
                 dom.progFill.style.width = `${percent}%`;
             }
