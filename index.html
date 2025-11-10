@@ -12,13 +12,9 @@
       rel="icon"
       type="image/png"
       sizes="32x32"
-      href="/favicon_io/favicon-32x32.png"
+      href="/public/favicon-32x32.png"
     />
-    <link
-      rel="apple-touch-icon"
-      type=""
-      href="/favicon_io/apple-touch-icon.png"
-    />
+    <link rel="apple-touch-icon" type="" href="/public/apple-touch-icon.png" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
     <meta
       name="apple-mobile-web-app-status-bar-style"
@@ -432,15 +428,15 @@
         🔗 share room
       </button>
 
-      <header class="text-center py-4 md:py-6">
+      <header class="text-center py-6 md:py-8 lg:py-10 px-4">
         <h1
-          class="text-3xl md:text-4xl lg:text-5xl font-bold mb-2 md:mb-3"
-          style="color: #b8bb26; text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.6)"
+          class="text-3xl md:text-4xl lg:text-5xl font-medium tracking-tight mb-2 md:mb-3"
+          style="color: #b8bb26; text-shadow: 0 1px 2px rgba(0, 0, 0, 0.2)"
         >
           peer-to-peer connection.
         </h1>
         <p
-          class="subtitle text-base md:text-lg lg:text-xl"
+          class="text-sm md:text-base lg:text-lg font-light tracking-wide opacity-80"
           style="color: #8ec07c"
         >
           file & message share, directly
@@ -450,12 +446,12 @@
       <!-- Status Bar -->
       <div
         id="status-bar"
-        class="status-bar md:hidden grid grid-cols-3 gap-3 text-[#ebdbb2] p-3 rounded-lg shadow-lg text-xs"
-        style="background: #3c3836; border: 1px solid #504945"
+        class="status-bar md:hidden grid grid-cols-2 gap-3 text-[#ebdbb2] p-3 rounded-lg shadow-lg text-lg"
+        style="background: #3c3836"
       >
         <div class="status-item text-center">
-          <div class="status-label opacity-70">WS</div>
-          <div id="ws-status-m" class="status-value disconnected font-semibold">
+          <div class="status-label opacity-70">Status</div>
+          <div id="status-m" class="status-value disconnected font-semibold">
             ●
           </div>
         </div>
@@ -463,66 +459,36 @@
           <div class="status-label opacity-70">ID</div>
           <div class="my-id status-value font-semibold">-</div>
         </div>
-        <div class="status-item text-center">
-          <div class="status-label opacity-70">DC</div>
-          <div id="dc-status-m" class="status-value disconnected font-semibold">
-            ●
-          </div>
-        </div>
       </div>
       <div
-        class="status-bar hidden md:flex flex-wrap justify-between gap-3 text-[#ebdbb2] p-4 rounded-lg shadow-lg"
-        style="background: #3c3836; border: 1px solid #504945"
+        class="status-bar hidden bg-[#3c3836] md:flex flex-wrap m-auto justify-between w-fit gap-8 text-[#ebdbb2] p-8 rounded-lg shadow-lg"
       >
-        <div class="status-item flex flex-col items-center min-w-[120px]">
-          <div class="status-label text-sm opacity-80 mb-1">
-            WebSocket Status
-          </div>
+        <div class="status-item flex flex-col items-center">
           <div
-            id="ws-status"
+            id="status"
             class="status-value disconnected font-bold text-base"
             style="color: #cc241d"
           >
-            Disconnected
+            Offline
           </div>
         </div>
+        <p>|</p>
         <div class="status-item flex flex-col items-center min-w-[120px]">
-          <div class="status-label text-sm opacity-80 mb-1">Your ID</div>
           <div
-            class="my-id status-value font-bold text-base"
-            style="color: #d79921"
-          >
-            Not registered
-          </div>
-        </div>
-        <div class="status-item flex flex-col items-center min-w-[120px]">
-          <div class="status-label text-sm opacity-80 mb-1">Your Name</div>
-          <div
-            id="my-name"
+            id="your-device"
             class="status-value font-bold text-base"
             style="color: #d79921"
           >
             Not registered
           </div>
         </div>
+        <p>|</p>
         <div class="status-item flex flex-col items-center min-w-[120px]">
-          <div class="status-label text-sm opacity-80 mb-1">Data Channel</div>
-          <div
-            id="dc-status"
-            class="status-value disconnected font-bold text-base"
-            style="color: #cc241d"
-          >
-            Closed
-          </div>
-        </div>
-        <div class="status-item flex flex-col items-center min-w-[120px]">
-          <div class="status-label text-sm opacity-80 mb-1">Selected Peer</div>
           <div
             id="selected-peer"
-            class="status-value font-bold text-base"
-            style="color: #d79921"
+            class="status-value text-[#cc214d] font-bold text-base"
           >
-            None
+            Not Connected
           </div>
         </div>
       </div>
@@ -531,9 +497,8 @@
       <div class="main-content m-3 flex flex-col lg:flex-row gap-4 md:gap-6">
         <!-- Side Panel -->
         <div
-          class="panel rounded-lg p-4 md:p-6 flex flex-col gap-4 shadow-lg flex-1 lg:min-w-[350px]"
+          class="panel rounded-lg p-4 md:p-10 flex flex-col gap-4 shadow-lg flex-1 bg-[#1d2021] text-[#ebdbb2] lg:min-w-[350px]"
           id="side-panel"
-          style="background: #1d2021; color: #ebdbb2; border: 1px solid #504945"
         >
           <div id="list-peers" class="hidden">
             <h2 class="text-xl md:text-2xl mb-4 pb-3 border-b border-[#504945]">
@@ -564,9 +529,9 @@
             <label
               for="fileShare"
               id="file-input-label"
-              class="file-input-label px-8 py-4 rounded-md border border-dashed cursor-pointer transition-all text-center text-sm md:text-base"
+              class="file-input-label px-8 py-4 rounded-md border border-solid cursor-pointer transition-all text-center text-sm md:text-base"
             >
-              📎 choose files to send...
+              📎 choose files
             </label>
             <input
               type="file"
@@ -613,8 +578,7 @@
 
         <!-- Message Panel -->
         <div
-          class="panel rounded-lg p-4 md:p-6 shadow-lg flex-1"
-          style="background: #1d2021; color: #ebdbb2; border: 1px solid #504945"
+          class="panel bg-[#1d2021] text-[#ebdbb2] rounded-lg p-4 md:p-10 shadow-lg flex-1"
         >
           <h2 class="text-xl md:text-2xl mb-4 pb-3 border-b border-[#504945]">
             chat / connection log
@@ -633,8 +597,7 @@
           </div>
 
           <div
-            class="message-input flex flex-col md:flex-row md:gap-4 mt-4"
-            style="background: #3c3836"
+            class="message-input bg-[#3c3836] rounded-lg flex flex-col md:flex-row md:gap-4 mt-4"
           >
             <input
               type="text"

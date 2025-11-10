@@ -43,7 +43,7 @@ function handleWsOpen() {
     const emoji =
         deviceType === "Mobile" ? "📱" : deviceType === "Tablet" ? "📱" : "💻";
     const myName = `${emoji} ${browser}`;
-    dom.nameEl.textContent = myName;
+    dom.nameEl.textContent = `${myName} `;
     sendWsMessage(ws, {
         type: "register",
         name: myName,
@@ -63,6 +63,7 @@ async function handleWsMessage(event) {
     const message = JSON.parse(event.data);
     if (message.yourID) {
         myId = message.yourID;
+        dom.nameEl.textContent += `(${myId})`;
         dom.myIdEl.forEach((element) => {
             element.textContent = myId;
         });
@@ -117,7 +118,7 @@ function handleWsClose() {
 }
 
 function handleWsError(err) {
-    console.error(`Websocket error: ${JSON.stringify(err)}`);
+    console.error(`Websocket error: ${JSON.stringify(err)} `);
 }
 
 function startWebsocket() {
@@ -292,7 +293,7 @@ dom.fileInput.addEventListener("change", (e) => {
         .map((f) => f.name)
         .join(", ");
     document.getElementById("file-input-label").textContent = files.length
-        ? `📁 ${fileNames}`
+        ? `📁 ${fileNames} `
         : "";
 });
 
@@ -309,7 +310,7 @@ document.getElementById("lan-btn").onclick = () => {
 
 dom.fileInput.addEventListener("change", () => {
     const file = dom.fileInput.files[0];
-    if (file.size > 1 * 1024 * 1024 * 1024) {
+    if (file.size > 512) {
         dom.notify.textContent = `Caution: Sending large files will use significant memory on the receiver's device.`;
         dom.notify.classList.remove("hidden");
         setTimeout(() => {

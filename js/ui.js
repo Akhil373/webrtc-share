@@ -52,29 +52,22 @@ export function updateWsStatus(connected) {
         dom.notify.classList.add("hidden");
     }
 
-    const txt = connected ? "Connected" : "Disconnected";
+    const txt = connected ? "Ready" : "Offline";
     const cls = connected ? "connected" : "disconnected";
 
-    const el = document.getElementById("ws-status");
-    el.textContent = txt;
-    el.className = `status-value ${cls}`;
-
-    const elM = document.getElementById("ws-status-m");
-    elM.textContent = connected ? "●" : "●";
-    elM.className = `status-value ${cls}`;
+    dom.statusEl.textContent = txt;
+    dom.statusEl.className = `status-value ${cls}`;
 }
 
 export function updateDcStatus(open) {
-    const txt = open ? "Connected" : "Disconnected";
-    const cls = open ? "connected" : "disconnected";
+    const txt = open ? `Connected` : "Ready";
+    const cls = "connected";
 
-    const el = document.getElementById("dc-status");
-    el.textContent = txt;
-    el.className = `status-value ${cls} `;
+    dom.statusEl.textContent = txt;
+    dom.statusEl.className = `status-value ${cls} `;
 
-    const elM = document.getElementById("dc-status-m");
-    elM.textContent = cls ? "●" : "●";
-    elM.className = `status-value ${cls} `;
+    dom.statusM_El.textContent = cls ? "●" : "●";
+    dom.statusM_El.className = `status-value ${cls} `;
 
     dom.messageInput.disabled = !open;
     dom.sendBtn.disabled = !open;
